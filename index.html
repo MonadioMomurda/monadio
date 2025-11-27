@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monadio Momurda Cartel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; overflow-x: hidden; }
+
+    body {
+      min-height: 100vh;
+      background: #000 url("bg.png") center center / cover fixed no-repeat;
+      font-family: "JetBrains Mono","Fira Code","SF Mono","Roboto Mono",monospace;
+      color: #fff;
+    }
+
+    /* ---------- HERO ---------- */
+
+    .hero-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-inline: 1rem;
+      width: 100%;
+    }
+
+    .hero {
+      position: relative;
+      height: 100vh;
+      max-width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-img {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      display: block;
+    }
+
+    .nav-links {
+      position: absolute;
+      left: 10%;
+      bottom: 14%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      z-index: 5;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-size: 4.5rem;
+      font-weight: 700;
+      color: rgba(202,160,255,0.95);
+      letter-spacing: 0.06em;
+      text-shadow:
+        0 0 6px rgba(202,160,255,0.9),
+        0 0 14px rgba(202,160,255,1),
+        0 0 24px rgba(202,160,255,1);
+      transition: transform .15s ease, text-shadow .15s ease;
+    }
+
+    .nav-links a::before { content: "> "; }
+
+    .nav-links a:hover {
+      transform: translateX(8px);
+      text-shadow:
+        0 0 8px #fff,
+        0 0 18px rgba(202,160,255,1),
+        0 0 30px rgba(202,160,255,1);
+    }
+
+    /* ---------- RESPONSIVE HERO ---------- */
+
+    @media (max-width: 900px) {
+      .hero { height: auto; width: 100vw; display: block; }
+      .hero-img { width: 100vw; height: auto; }
+
+      .nav-links { left: 8%; bottom: 8%; gap: 0.9rem; }
+      .nav-links a { font-size: 2.4rem; }
+    }
+
+    @media (max-width: 600px) {
+      .nav-links { left: 7%; bottom: 6%; gap: 0.7rem; }
+      .nav-links a { font-size: 2rem; }
+    }
+
+    /* ---------- MINT POPUP ---------- */
+
+    .mint-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(3px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .mint-popup {
+      width: 92%;
+      max-width: 480px;
+      background: #050505;
+      border-radius: 12px;
+      border: 2px solid rgba(202,160,255,0.5);
+      box-shadow:
+        0 0 30px rgba(202,160,255,0.7),
+        0 0 60px rgba(100,40,150,0.8);
+      padding: 2rem;
+      position: relative;
+      text-align: center;
+    }
+
+    .popup-title {
+      font-size: 2rem;
+      letter-spacing: 0.15em;
+      color: #f7e8ff;
+      margin-bottom: 0.6rem;
+    }
+
+    .popup-sub {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 2rem;
+    }
+
+    .close-popup {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 1.6rem;
+      cursor: pointer;
+      color: #d9b3ff;
+      text-shadow: 0 0 10px rgba(202,160,255,1);
+    }
+
+    .popup-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.3rem;
+    }
+
+    .popup-label {
+      font-size: 1rem;
+      letter-spacing: .08em;
+    }
+
+    .amount-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .amount-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid rgba(200,150,255,0.9);
+      background: transparent;
+      color: #e6d1ff;
+      cursor: pointer;
+      font-size: 1.3rem;
+      transition: 0.1s ease;
+    }
+
+    .amount-btn:hover {
+      background: rgba(200,150,255,0.18);
+      transform: translateY(-1px);
+    }
+
+    .amount-value {
+      min-width: 34px;
+      text-align: center;
+      font-size: 1.3rem;
+    }
+
+    .button-primary {
+      width: 100%;
+      border-radius: 999px;
+      padding: 0.9rem;
+      border: 1px solid rgba(200,150,255,0.9);
+      background: linear-gradient(135deg,#b365ff,#ff9dff);
+      color: #100017;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 0 16px rgba(200,150,255,0.35);
+      margin-top: 0.7rem;
+    }
+
+    .button-primary:disabled {
+      opacity: 0.4;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .connect-btn {
+      background: transparent;
+      color: #d9c0ff;
+    }
+
+    .mint-status {
+      margin-top: 1rem;
+      min-height: 1.2rem;
+      font-size: 0.85rem;
+    }
+
+    .mint-status.error   { color: #ff8f9a; }
+    .mint-status.success { color: #9bffb5; }
+  </style>
+</head>
+
+<body>
+
+<!-- HERO -->
+<section class="hero-wrapper">
+  <div class="hero">
+    <img src="main.png" class="hero-img" alt="Monadio Momurda Cartel">
+
+    <nav class="nav-links">
+      <a href="#" id="openMint">MINT</a>
+      <a href="https://x.com/i/communities/1993347794430505292" target="_blank">TWITTER</a>
+      <a href="https://t.me/monadiocartel" target="_blank">CHAT</a>
+      <a href="#">CHECK PRICE</a>
+    </nav>
+  </div>
+</section>
+
+<!-- MINT POPUP -->
+<div class="mint-overlay" id="mintOverlay">
+  <div class="mint-popup">
+    <div class="close-popup" id="closeMint">×</div>
+
+    <div class="popup-title">MINT</div>
+    <div class="popup-sub">CONNECT WALLET AND CHOOSE AMOUNT</div>
+
+    <div class="popup-row">
+      <span class="popup-label">AMOUNT</span>
+      <div class="amount-controls">
+        <button class="amount-btn" id="minusBtn">−</button>
+        <span class="amount-value" id="mintAmount">1</span>
+        <button class="amount-btn" id="plusBtn">+</button>
+      </div>
+    </div>
+
+    <div class="popup-row">
+      <span class="popup-label">TOTAL</span>
+      <span id="totalPrice">1111.0000 MON</span>
+    </div>
+
+    <div class="popup-row">
+      <span class="popup-label">WALLET</span>
+      <span id="walletAddr">NOT CONNECTED</span>
+    </div>
+
+    <button class="button-primary connect-btn" id="connectWallet">CONNECT</button>
+    <button class="button-primary" id="mintNow" disabled>MINT NOW</button>
+
+    <div class="mint-status" id="mintStatus"></div>
+  </div>
+</div>
+
+<!-- ethers.js -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script>
+  // ====== CONFIG ======
+
+  // Your contract
+  const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
+
+  // Matches your Solidity:
+  // function mint(uint256 _mintAmount) public payable
+  // uint256 public cost;
+  const CONTRACT_ABI = [
+    "function mint(uint256 _mintAmount) payable",
+    "function cost() view returns (uint256)"
+  ];
+
+  // Monad mainnet network info
+  // https://docs.monad.xyz/developer-essentials/network-information
+  const MONAD_CHAIN_ID_HEX = "0x8f"; // 143
+  const MONAD_PARAMS = {
+    chainId: MONAD_CHAIN_ID_HEX,
+    chainName: "Monad Mainnet",
+    nativeCurrency: {
+      name: "Monad",
+      symbol: "MON",
+      decimals: 18
+    },
+    rpcUrls: ["https://rpc.monad.xyz"],
+    blockExplorerUrls: ["https://monadvision.com"]
+  };
+
+  // Fallback price if cost() can't be read (1111 MON)
+  const FALLBACK_COST_MON = "1111";
+
+  // ====== POPUP OPEN/CLOSE ======
+  const openMint  = document.getElementById("openMint");
+  const closeMint = document.getElementById("closeMint");
+  const overlay   = document.getElementById("mintOverlay");
+
+  openMint.addEventListener("click", (e) => {
+    e.preventDefault();
+    overlay.style.display = "flex";
+  });
+
+  closeMint.addEventListener("click", () => {
+    overlay.style.display = "none";
+  });
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.style.display = "none";
+  });
+
+  // ====== STATE + UI HOOKS ======
+  let amount = 1;
+  const MAX_AMOUNT = 11; // your maxMintAmount
+  let costWei = ethers.utils.parseEther(FALLBACK_COST_MON);
+  let currentAccount = null;
+
+  const plusBtn    = document.getElementById("plusBtn");
+  const minusBtn   = document.getElementById("minusBtn");
+  const amountEl   = document.getElementById("mintAmount");
+  const priceEl    = document.getElementById("totalPrice");
+  const walletEl   = document.getElementById("walletAddr");
+  const statusEl   = document.getElementById("mintStatus");
+  const connectBtn = document.getElementById("connectWallet");
+  const mintBtn    = document.getElementById("mintNow");
+
+  function setStatus(msg, type = "") {
+    statusEl.textContent = msg;
+    statusEl.className = "mint-status" + (type ? " " + type : "");
+  }
+
+  function updatePrice() {
+    const totalWei = costWei.mul(amount);
+    const formatted = ethers.utils.formatEther(totalWei);
+    priceEl.textContent = parseFloat(formatted).toFixed(4) + " MON";
+  }
+
+  function setAmount(newAmount) {
+    if (newAmount < 1) newAmount = 1;
+    if (newAmount > MAX_AMOUNT) newAmount = MAX_AMOUNT;
+    amount = newAmount;
+    amountEl.textContent = amount;
+    updatePrice();
+  }
+
+  plusBtn.addEventListener("click", () => setAmount(amount + 1));
+  minusBtn.addEventListener("click", () => setAmount(amount - 1));
+
+  updatePrice();
+
+  // ====== NETWORK HELPERS ======
+  async function ensureMonadNetwork() {
+    if (!window.ethereum) {
+      throw new Error("NO WALLET DETECTED");
+    }
+
+    const currentChainId = await ethereum.request({ method: "eth_chainId" });
+    if (currentChainId.toLowerCase() === MONAD_CHAIN_ID_HEX) {
+      return;
+    }
+
+    try {
+      // try switch first
+      await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: MONAD_CHAIN_ID_HEX }]
+      });
+    } catch (switchError) {
+      // if Monad is not added yet, add it
+      if (switchError.code === 4902) {
+        await ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [MONAD_PARAMS]
+        });
+      } else {
+        throw switchError;
+      }
+    }
+  }
+
+  // ====== WALLET CONNECT ======
+  async function connectWallet() {
+    if (!window.ethereum) {
+      setStatus("NO WALLET DETECTED", "error");
+      return;
+    }
+
+    try {
+      await ensureMonadNetwork();
+
+      const accounts = await ethereum.request({
+        method: "eth_requestAccounts"
+      });
+
+      currentAccount = accounts[0];
+      walletEl.textContent = currentAccount;
+      connectBtn.textContent = "CONNECTED";
+      mintBtn.disabled = false;
+      setStatus("CONNECTED", "success");
+
+      // read on-chain cost
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const onChainCost = await contract.cost();
+        if (onChainCost.gt(0)) {
+          costWei = onChainCost;
+          updatePrice();
+        }
+      } catch (e) {
+        // ignore, fallback stays
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus(err.message || "FAILED TO CONNECT", "error");
+    }
+  }
+
+  connectBtn.addEventListener("click", connectWallet);
+
+  // ====== MINT ======
+  async function mint() {
+    if (!window.ethereum) {
+      setStatus("NO WALLET DETECTED", "error");
+      return;
+    }
+    if (!currentAccount) {
+      setStatus("CONNECT FIRST", "error");
+      return;
+    }
+
+    try {
+      await ensureMonadNetwork();
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer   = provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      const value = costWei.mul(amount); // cost * _mintAmount
+
+      setStatus("SENDING TRANSACTION…");
+      mintBtn.disabled = true;
+
+      const tx = await contract.mint(amount, { value });
+      setStatus("WAITING FOR CONFIRMATION…");
+      await tx.wait();
+
+      setStatus("MINT SUCCESSFUL", "success");
+      mintBtn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      mintBtn.disabled = false;
+      if (err.code === 4001) {
+        setStatus("TX REJECTED BY USER", "error");
+      } else {
+        setStatus(err.message || "MINT FAILED", "error");
+      }
+    }
+  }
+
+  mintBtn.addEventListener("click", mint);
+
+  // react to account changes
+  if (window.ethereum) {
+    window.ethereum.on("accountsChanged", (accounts) => {
+      if (!accounts.length) {
+        currentAccount = null;
+        walletEl.textContent = "NOT CONNECTED";
+        mintBtn.disabled = true;
+        connectBtn.textContent = "CONNECT";
+      } else {
+        currentAccount = accounts[0];
+        walletEl.textContent = currentAccount;
+        mintBtn.disabled = false;
+        connectBtn.textContent = "CONNECTED";
+      }
+    });
+  }
+</script>
+</body>
+</html>
