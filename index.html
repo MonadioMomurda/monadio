@@ -41,6 +41,7 @@
       width: auto;
       max-width: 100%;
       display: block;
+      mix-blend-mode: screen; /* make main.png blend with bg using SCREEN */
     }
 
     .nav-links {
@@ -60,20 +61,23 @@
       color: rgba(202,160,255,0.95);
       letter-spacing: 0.06em;
       text-shadow:
-        0 0 6px rgba(202,160,255,0.9),
-        0 0 14px rgba(202,160,255,1),
-        0 0 24px rgba(202,160,255,1);
+        0 0 10px #b154ff,
+        0 0 22px #a442ff,
+        0 0 36px #9025ff;
       transition: transform .15s ease, text-shadow .15s ease;
     }
 
-    .nav-links a::before { content: "> "; }
+    .nav-links a::before {
+      content: "> ";
+    }
 
     .nav-links a:hover {
       transform: translateX(8px);
       text-shadow:
-        0 0 8px #fff,
-        0 0 18px rgba(202,160,255,1),
-        0 0 30px rgba(202,160,255,1);
+        0 0 12px #b154ff,
+        0 0 26px #a442ff,
+        0 0 42px #9025ff,
+        0 0 60px #7a0aff;
     }
 
     /* ---------- RESPONSIVE HERO ---------- */
@@ -195,6 +199,7 @@
       text-transform: uppercase;
       box-shadow: 0 0 16px rgba(200,150,255,0.35);
       margin-top: 0.7rem;
+      font-size: 0.86rem;
     }
 
     .button-primary:disabled {
@@ -208,6 +213,11 @@
       color: #d9c0ff;
     }
 
+    .wl-btn {
+      background: #120019;
+      border-style: dashed;
+    }
+
     .mint-status {
       margin-top: 1rem;
       min-height: 1.2rem;
@@ -216,6 +226,17 @@
 
     .mint-status.error   { color: #ff8f9a; }
     .mint-status.success { color: #9bffb5; }
+
+    .contract-line {
+      margin-top: 0.6rem;
+      font-size: 0.75rem;
+      opacity: 0.75;
+    }
+
+    .contract-line a {
+      color: #caa0ff;
+      text-decoration: underline;
+    }
   </style>
 </head>
 
@@ -228,9 +249,9 @@
 
     <nav class="nav-links">
       <a href="#" id="openMint">MINT</a>
-      <a href="https://x.com/i/communities/1993347794430505292" target="_blank">TWITTER</a>
+      <a href="https://x.com/MonadioMomurda" target="_blank">TWITTER</a>
       <a href="https://t.me/monadiocartel" target="_blank">CHAT</a>
-      <a href="#">CHECK PRICE</a>
+      <a href="https://monadio.club" target="_blank">CHECK PRICE</a>
     </nav>
   </div>
 </section>
@@ -264,6 +285,13 @@
 
     <button class="button-primary connect-btn" id="connectWallet">CONNECT</button>
     <button class="button-primary" id="mintNow" disabled>MINT NOW</button>
+    <button class="button-primary wl-btn" id="freeMintBtn" disabled>FREE MINT (WL ONLY)</button>
+
+    <div class="contract-line">
+      CONTRACT:
+      <a href="https://monadvision.com/address/0xba26bA63d31D284095F38f0B107DE802e1268Fcf"
+         target="_blank">0xba26...8Fcf</a>
+    </div>
 
     <div class="mint-status" id="mintStatus"></div>
   </div>
@@ -274,20 +302,15 @@
 <script>
   // ====== CONFIG ======
 
-  // Your contract
   const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
 
-  // Matches your Solidity:
-  // function mint(uint256 _mintAmount) public payable
-  // uint256 public cost;
   const CONTRACT_ABI = [
     "function mint(uint256 _mintAmount) payable",
-    "function cost() view returns (uint256)"
+    "function cost() view returns (uint256)",
+    "function freeMint() external"
   ];
 
-  // Monad mainnet network info
-  // https://docs.monad.xyz/developer-essentials/network-information
-  const MONAD_CHAIN_ID_HEX = "0x8f"; // 143
+  const MONAD_CHAIN_ID_HEX = "0x8f"; // 143 mainnet
   const MONAD_PARAMS = {
     chainId: MONAD_CHAIN_ID_HEX,
     chainName: "Monad Mainnet",
@@ -300,8 +323,7 @@
     blockExplorerUrls: ["https://monadvision.com"]
   };
 
-  // Fallback price if cost() can't be read (1111 MON)
-  const FALLBACK_COST_MON = "1111";
+  const FALLBACK_COST_MON = "1111"; // if cost() fails
 
   // ====== POPUP OPEN/CLOSE ======
   const openMint  = document.getElementById("openMint");
@@ -321,20 +343,53 @@
     if (e.target === overlay) overlay.style.display = "none";
   });
 
-  // ====== STATE + UI HOOKS ======
+  // ====== PROVIDER (MetaMask + Trust Wallet) ======
+
+  function detectEvmProvider() {
+    const eth = window.ethereum;
+    if (!eth) return null;
+
+    // Multi-provider (EIP-6963 style)
+    if (eth.providers && eth.providers.length) {
+      // Prefer MetaMask
+      const metaMask = eth.providers.find(p => p.isMetaMask);
+      if (metaMask) return metaMask;
+
+      // Prefer Trust Wallet next
+      const trust = eth.providers.find(p => p.isTrust || p.isTrustWallet);
+      if (trust) return trust;
+
+      return eth.providers[0];
+    }
+
+    // Single provider
+    return eth;
+  }
+
+  let evmProvider = null;
+
+  function getProvider() {
+    if (!evmProvider) {
+      evmProvider = detectEvmProvider();
+    }
+    return evmProvider;
+  }
+
+  // ====== STATE + UI ======
   let amount = 1;
-  const MAX_AMOUNT = 11; // your maxMintAmount
+  const MAX_AMOUNT = 11;
   let costWei = ethers.utils.parseEther(FALLBACK_COST_MON);
   let currentAccount = null;
 
-  const plusBtn    = document.getElementById("plusBtn");
-  const minusBtn   = document.getElementById("minusBtn");
-  const amountEl   = document.getElementById("mintAmount");
-  const priceEl    = document.getElementById("totalPrice");
-  const walletEl   = document.getElementById("walletAddr");
-  const statusEl   = document.getElementById("mintStatus");
-  const connectBtn = document.getElementById("connectWallet");
-  const mintBtn    = document.getElementById("mintNow");
+  const plusBtn     = document.getElementById("plusBtn");
+  const minusBtn    = document.getElementById("minusBtn");
+  const amountEl    = document.getElementById("mintAmount");
+  const priceEl     = document.getElementById("totalPrice");
+  const walletEl    = document.getElementById("walletAddr");
+  const statusEl    = document.getElementById("mintStatus");
+  const connectBtn  = document.getElementById("connectWallet");
+  const mintBtn     = document.getElementById("mintNow");
+  const freeMintBtn = document.getElementById("freeMintBtn");
 
   function setStatus(msg, type = "") {
     statusEl.textContent = msg;
@@ -360,47 +415,103 @@
 
   updatePrice();
 
-  // ====== NETWORK HELPERS ======
+  // ====== ERROR PARSING ======
+  function parseFriendlyError(err) {
+    const nested =
+      err?.data?.message ||
+      err?.error?.message ||
+      err?.message ||
+      "";
+
+    let friendly = nested;
+
+    if (nested.includes("Not eligible"))                     friendly = "NOT WHITELISTED / NO FREE MINT";
+    if (nested.includes("not for sale yet"))                 friendly = "MINT NOT LIVE YET";
+    if (nested.includes("Not enough tokens left to mint"))   friendly = "NOT ENOUGH SUPPLY LEFT";
+    if (nested.includes("Not enough tokens available"))      friendly = "SOLD OUT";
+    if (nested.includes("max NFT per address exceeded"))     friendly = "PER-WALLET LIMIT HIT";
+    if (nested.includes("Value below price"))                friendly = "NOT ENOUGH MON SENT";
+    if (nested.includes("mint more than the 11"))            friendly = "MAX 11 PER TX";
+
+    if (!friendly) friendly = "MINT FAILED";
+    return friendly;
+  }
+
+  // ====== NETWORK HELPERS (Trust Wallet safe) ======
+  async function getCurrentChainIdHex(provider) {
+    const raw = await provider.request({ method: "eth_chainId" });
+
+    if (typeof raw === "string") {
+      if (raw.startsWith("0x") || raw.startsWith("0X")) {
+        return raw.toLowerCase();
+      }
+      const num = Number(raw);
+      if (!Number.isNaN(num)) {
+        return "0x" + num.toString(16);
+      }
+      return raw.toLowerCase();
+    }
+
+    if (typeof raw === "number") {
+      return "0x" + raw.toString(16);
+    }
+
+    return String(raw).toLowerCase();
+  }
+
   async function ensureMonadNetwork() {
-    if (!window.ethereum) {
+    const provider = getProvider();
+    if (!provider) {
       throw new Error("NO WALLET DETECTED");
     }
 
-    const currentChainId = await ethereum.request({ method: "eth_chainId" });
-    if (currentChainId.toLowerCase() === MONAD_CHAIN_ID_HEX) {
+    let currentHex;
+    try {
+      currentHex = await getCurrentChainIdHex(provider);
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+
+    if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) {
       return;
     }
 
     try {
-      // try switch first
-      await ethereum.request({
+      await provider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: MONAD_CHAIN_ID_HEX }]
       });
     } catch (switchError) {
-      // if Monad is not added yet, add it
       if (switchError.code === 4902) {
-        await ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [MONAD_PARAMS]
-        });
+        try {
+          await provider.request({
+            method: "wallet_addEthereumChain",
+            params: [MONAD_PARAMS]
+          });
+        } catch (addError) {
+          console.error(addError);
+          throw new Error("PLEASE SWITCH NETWORK TO MONAD (CHAIN 143) IN YOUR WALLET");
+        }
       } else {
-        throw switchError;
+        console.error(switchError);
+        throw new Error("PLEASE SWITCH NETWORK TO MONAD (CHAIN 143) IN YOUR WALLET");
       }
     }
   }
 
   // ====== WALLET CONNECT ======
   async function connectWallet() {
-    if (!window.ethereum) {
-      setStatus("NO WALLET DETECTED", "error");
+    const provider = getProvider();
+    if (!provider) {
+      setStatus("NO WALLET DETECTED (OPEN FROM HTTPS SITE, NOT FILE://)", "error");
       return;
     }
 
     try {
       await ensureMonadNetwork();
 
-      const accounts = await ethereum.request({
+      const accounts = await provider.request({
         method: "eth_requestAccounts"
       });
 
@@ -408,12 +519,13 @@
       walletEl.textContent = currentAccount;
       connectBtn.textContent = "CONNECTED";
       mintBtn.disabled = false;
+      freeMintBtn.disabled = false;
       setStatus("CONNECTED", "success");
 
       // read on-chain cost
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const web3Provider = new ethers.providers.Web3Provider(provider);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
         const onChainCost = await contract.cost();
         if (onChainCost.gt(0)) {
           costWei = onChainCost;
@@ -430,9 +542,10 @@
 
   connectBtn.addEventListener("click", connectWallet);
 
-  // ====== MINT ======
+  // ====== PAID MINT ======
   async function mint() {
-    if (!window.ethereum) {
+    const provider = getProvider();
+    if (!provider) {
       setStatus("NO WALLET DETECTED", "error");
       return;
     }
@@ -444,14 +557,15 @@
     try {
       await ensureMonadNetwork();
 
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer   = provider.getSigner();
+      const web3Provider = new ethers.providers.Web3Provider(provider);
+      const signer   = web3Provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
       const value = costWei.mul(amount); // cost * _mintAmount
 
       setStatus("SENDING TRANSACTION…");
       mintBtn.disabled = true;
+      freeMintBtn.disabled = true;
 
       const tx = await contract.mint(amount, { value });
       setStatus("WAITING FOR CONFIRMATION…");
@@ -459,31 +573,80 @@
 
       setStatus("MINT SUCCESSFUL", "success");
       mintBtn.disabled = false;
+      freeMintBtn.disabled = false;
     } catch (err) {
       console.error(err);
       mintBtn.disabled = false;
+      freeMintBtn.disabled = false;
       if (err.code === 4001) {
         setStatus("TX REJECTED BY USER", "error");
       } else {
-        setStatus(err.message || "MINT FAILED", "error");
+        setStatus(parseFriendlyError(err), "error");
       }
     }
   }
 
   mintBtn.addEventListener("click", mint);
 
-  // react to account changes
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
+  // ====== FREE MINT (WL ONLY) ======
+  async function freeMint() {
+    const provider = getProvider();
+    if (!provider) {
+      setStatus("NO WALLET DETECTED", "error");
+      return;
+    }
+    if (!currentAccount) {
+      setStatus("CONNECT FIRST", "error");
+      return;
+    }
+
+    try {
+      await ensureMonadNetwork();
+
+      const web3Provider = new ethers.providers.Web3Provider(provider);
+      const signer   = web3Provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      setStatus("SENDING FREE MINT TX…");
+      mintBtn.disabled = true;
+      freeMintBtn.disabled = true;
+
+      const tx = await contract.freeMint(); // no value
+      setStatus("WAITING FOR CONFIRMATION…");
+      await tx.wait();
+
+      setStatus("FREE MINT SUCCESSFUL", "success");
+      mintBtn.disabled = false;
+      freeMintBtn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      mintBtn.disabled = false;
+      freeMintBtn.disabled = false;
+      if (err.code === 4001) {
+        setStatus("TX REJECTED BY USER", "error");
+      } else {
+        setStatus(parseFriendlyError(err), "error");
+      }
+    }
+  }
+
+  freeMintBtn.addEventListener("click", freeMint);
+
+  // ====== REACT TO ACCOUNT CHANGES ======
+  const baseProvider = getProvider();
+  if (baseProvider && baseProvider.on) {
+    baseProvider.on("accountsChanged", (accounts) => {
       if (!accounts.length) {
         currentAccount = null;
         walletEl.textContent = "NOT CONNECTED";
         mintBtn.disabled = true;
+        freeMintBtn.disabled = true;
         connectBtn.textContent = "CONNECT";
       } else {
         currentAccount = accounts[0];
         walletEl.textContent = currentAccount;
         mintBtn.disabled = false;
+        freeMintBtn.disabled = false;
         connectBtn.textContent = "CONNECTED";
       }
     });
