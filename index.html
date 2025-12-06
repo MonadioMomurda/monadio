@@ -301,8 +301,12 @@
   </div>
 </div>
 
+<!-- WalletConnect Ethereum Provider (QR / mobile wallets) -->
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
+
 <!-- ethers.js -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
 <script>
   // ====== CONFIG ======
 
@@ -347,9 +351,13 @@
     if (e.target === overlay) overlay.style.display = "none";
   });
 
-  // ====== PROVIDER (MetaMask + Trust Wallet) ======
+  // ====== PROVIDERS (Injected + WalletConnect Fallback) ======
 
-  function detectEvmProvider() {
+  let injectedProvider      = null; // window.ethereum-based
+  let walletConnectProvider = null; // WalletConnect EIP-1193
+  let activeProvider        = null; // whatever we actually use
+
+  function detectInjectedProvider() {
     const eth = window.ethereum;
     if (!eth) return null;
 
@@ -370,13 +378,44 @@
     return eth;
   }
 
-  let evmProvider = null;
+  function getActiveProvider() {
+    return activeProvider;
+  }
 
-  function getProvider() {
-    if (!evmProvider) {
-      evmProvider = detectEvmProvider();
+  // WalletConnect helper (v2, via UMD global)
+  async function getWalletConnectProvider() {
+    if (walletConnectProvider) return walletConnectProvider;
+
+    const wcModule = window["@walletconnect/ethereum-provider"];
+    if (!wcModule || !wcModule.EthereumProvider) {
+      throw new Error("WalletConnect provider script not loaded");
     }
-    return evmProvider;
+
+    walletConnectProvider = await wcModule.EthereumProvider.init({
+      projectId: "a76907beadb483551f410ad4716c28f3", // <<< put your WC projectId
+      chains: [143],          // Monad chain id (CAIP-2 numeric)
+      optionalChains: [143],
+      rpcMap: {
+        143: "https://rpc.monad.xyz"
+      },
+      methods: [
+        "eth_sendTransaction",
+        "personal_sign",
+        "eth_signTypedData",
+        "wallet_switchEthereumChain",
+        "wallet_addEthereumChain"
+      ],
+      events: ["chainChanged", "accountsChanged"],
+      metadata: {
+        name: "Monadio Mint",
+        description: "Monadio Momurda Cartel Mint",
+        url: window.location.origin,
+        icons: ["https://monadio.club/main.png"]
+      },
+      showQrModal: true
+    });
+
+    return walletConnectProvider;
   }
 
   // ====== STATE + UI ======
@@ -419,6 +458,41 @@
 
   updatePrice();
 
+  // ====== ACCOUNT / LISTENER HELPERS ======
+
+  function handleAccountsChanged(accounts) {
+    if (!accounts || !accounts.length) {
+      currentAccount = null;
+      walletEl.textContent = "NOT CONNECTED";
+      mintBtn.disabled = true;
+      freeMintBtn.disabled = true;
+      connectBtn.textContent = "CONNECT";
+    } else {
+      currentAccount = accounts[0];
+      walletEl.textContent = currentAccount;
+      mintBtn.disabled = false;
+      freeMintBtn.disabled = false;
+      connectBtn.textContent = "CONNECTED";
+    }
+  }
+
+  function setupProviderListeners(provider) {
+    if (!provider || !provider.on) return;
+
+    provider.on("accountsChanged", (accounts) => {
+      handleAccountsChanged(accounts);
+    });
+
+    provider.on("chainChanged", (chainId) => {
+      const hex = String(chainId).toLowerCase();
+      if (hex !== MONAD_CHAIN_ID_HEX.toLowerCase()) {
+        setStatus("WRONG NETWORK – SELECT MONAD (CHAIN 143) IN WALLET", "error");
+      } else {
+        setStatus("", "");
+      }
+    });
+  }
+
   // ====== ERROR PARSING ======
   function parseFriendlyError(err) {
     const nested =
@@ -441,7 +515,7 @@
     return friendly;
   }
 
-  // ====== NETWORK HELPERS (Trust Wallet safe) ======
+  // ====== NETWORK HELPERS ======
   async function getCurrentChainIdHex(provider) {
     const raw = await provider.request({ method: "eth_chainId" });
 
@@ -463,15 +537,15 @@
     return String(raw).toLowerCase();
   }
 
-  async function ensureMonadNetwork() {
-    const provider = getProvider();
-    if (!provider) {
+  async function ensureMonadNetwork(provider) {
+    const p = provider || getActiveProvider();
+    if (!p) {
       throw new Error("NO WALLET DETECTED");
     }
 
     let currentHex;
     try {
-      currentHex = await getCurrentChainIdHex(provider);
+      currentHex = await getCurrentChainIdHex(p);
     } catch (e) {
       console.error(e);
       return;
@@ -482,14 +556,14 @@
     }
 
     try {
-      await provider.request({
+      await p.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: MONAD_CHAIN_ID_HEX }]
       });
     } catch (switchError) {
       if (switchError.code === 4902) {
         try {
-          await provider.request({
+          await p.request({
             method: "wallet_addEthereumChain",
             params: [MONAD_PARAMS]
           });
@@ -504,31 +578,46 @@
     }
   }
 
-  // ====== WALLET CONNECT ======
+  // ====== WALLET CONNECT / CONNECT BUTTON ======
   async function connectWallet() {
-    const provider = getProvider();
-    if (!provider) {
-      setStatus("NO WALLET DETECTED (OPEN FROM HTTPS SITE, NOT FILE://)", "error");
-      return;
-    }
-
     try {
-      await ensureMonadNetwork();
+      // 1) Try injected (MetaMask / Trust / etc.)
+      injectedProvider = detectInjectedProvider();
 
-      const accounts = await provider.request({
-        method: "eth_requestAccounts"
-      });
+      if (injectedProvider) {
+        const provider = injectedProvider;
+        activeProvider = provider;
 
-      currentAccount = accounts[0];
-      walletEl.textContent = currentAccount;
-      connectBtn.textContent = "CONNECTED";
-      mintBtn.disabled = false;
-      freeMintBtn.disabled = false;
-      setStatus("CONNECTED", "success");
+        await ensureMonadNetwork(provider);
 
-      // read on-chain cost
+        const accounts = await provider.request({
+          method: "eth_requestAccounts"
+        });
+
+        handleAccountsChanged(accounts);
+        setupProviderListeners(provider);
+        setStatus("CONNECTED", "success");
+      } else {
+        // 2) Fallback → WalletConnect QR
+        setStatus("OPENING WALLETCONNECT…", "info");
+
+        const wc = await getWalletConnectProvider();
+        const accounts = await wc.enable(); // opens QR modal
+
+        if (!accounts || !accounts.length) {
+          throw new Error("NO ACCOUNT SELECTED IN WALLET");
+        }
+
+        activeProvider = wc;
+        handleAccountsChanged(accounts);
+        setupProviderListeners(wc);
+        connectBtn.textContent = "CONNECTED (WC)";
+        setStatus("CONNECTED VIA WALLETCONNECT", "success");
+      }
+
+      // Read on-chain cost (works for both provider types)
       try {
-        const web3Provider = new ethers.providers.Web3Provider(provider);
+        const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
         const onChainCost = await contract.cost();
         if (onChainCost.gt(0)) {
@@ -548,7 +637,7 @@
 
   // ====== PAID MINT ======
   async function mint() {
-    const provider = getProvider();
+    const provider = getActiveProvider();
     if (!provider) {
       setStatus("NO WALLET DETECTED", "error");
       return;
@@ -559,9 +648,9 @@
     }
 
     try {
-      await ensureMonadNetwork();
+      await ensureMonadNetwork(provider);
 
-      const web3Provider = new ethers.providers.Web3Provider(provider);
+      const web3Provider = new ethers.providers.Web3Provider(provider, "any");
       const signer   = web3Provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
@@ -594,7 +683,7 @@
 
   // ====== FREE MINT (WL ONLY) ======
   async function freeMint() {
-    const provider = getProvider();
+    const provider = getActiveProvider();
     if (!provider) {
       setStatus("NO WALLET DETECTED", "error");
       return;
@@ -605,9 +694,9 @@
     }
 
     try {
-      await ensureMonadNetwork();
+      await ensureMonadNetwork(provider);
 
-      const web3Provider = new ethers.providers.Web3Provider(provider);
+      const web3Provider = new ethers.providers.Web3Provider(provider, "any");
       const signer   = web3Provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
@@ -635,26 +724,6 @@
   }
 
   freeMintBtn.addEventListener("click", freeMint);
-
-  // ====== REACT TO ACCOUNT CHANGES ======
-  const baseProvider = getProvider();
-  if (baseProvider && baseProvider.on) {
-    baseProvider.on("accountsChanged", (accounts) => {
-      if (!accounts.length) {
-        currentAccount = null;
-        walletEl.textContent = "NOT CONNECTED";
-        mintBtn.disabled = true;
-        freeMintBtn.disabled = true;
-        connectBtn.textContent = "CONNECT";
-      } else {
-        currentAccount = accounts[0];
-        walletEl.textContent = currentAccount;
-        mintBtn.disabled = false;
-        freeMintBtn.disabled = false;
-        connectBtn.textContent = "CONNECTED";
-      }
-    });
-  }
 </script>
 </body>
 </html>
