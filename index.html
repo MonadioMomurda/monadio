@@ -309,6 +309,9 @@
     "function freeMint() external"
   ];
 
+  // global fallback so any stray references don't explode
+    let accounts = [];
+
   const MONAD_CHAIN_ID_HEX = "0x8f"; // 143 mainnet
   const MONAD_PARAMS = {
     chainId: MONAD_CHAIN_ID_HEX,
