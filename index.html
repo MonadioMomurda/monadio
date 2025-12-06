@@ -393,10 +393,10 @@
 
     walletConnectProvider = await wcModule.EthereumProvider.init({
       projectId: "a76907beadb483551f410ad4716c28f3", // <<< put your WC projectId
-      chains: [143],          // Monad chain id (CAIP-2 numeric)
-      optionalChains: [143],
+      chains: [Number(143)],          // Monad chain id (CAIP-2 numeric)
+      optionalChains: [],
       rpcMap: {
-        143: "https://rpc.monad.xyz"
+        Number(143): "https://rpc.monad.xyz"
       },
       methods: [
         "eth_sendTransaction",
