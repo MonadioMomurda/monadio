@@ -105,7 +105,7 @@
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 9999;
+      z-index: 10;
     }
 
     .mint-popup {
@@ -588,11 +588,62 @@
         const provider = injectedProvider;
         activeProvider = provider;
 
-        await ensureMonadNetwork(provider);
+     async function connectWallet() {
+  try {
+    // 1) Try injected (MetaMask / Trust / etc.)
+    injectedProvider = detectInjectedProvider();
 
-        const accounts = await provider.request({
-          method: "eth_requestAccounts"
-        });
+    if (injectedProvider) {
+      const provider = injectedProvider;
+      activeProvider = provider;
+
+      // 👉 ask for accounts FIRST
+      const accounts = await provider.request({
+        method: "eth_requestAccounts"
+      });
+      handleAccountsChanged(accounts);
+      setupProviderListeners(provider);
+
+      // 👉 then try to move them to Monad
+      await ensureMonadNetwork(provider);
+
+      setStatus("CONNECTED", "success");
+    } else {
+      // 2) Fallback → WalletConnect QR / mobile linking
+      setStatus("OPENING WALLETCONNECT…", "info");
+
+      const wc = await getWalletConnectProvider();
+      const accounts = await wc.enable(); // opens QR / app selector
+
+      if (!accounts || !accounts.length) {
+        throw new Error("NO ACCOUNT SELECTED IN WALLET");
+      }
+
+      activeProvider = wc;
+      handleAccountsChanged(accounts);
+      setupProviderListeners(wc);
+      connectBtn.textContent = "CONNECTED (WC)";
+      setStatus("CONNECTED VIA WALLETCONNECT", "success");
+    }
+
+    // Read on-chain cost (works for both provider types)
+    try {
+      const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
+      const onChainCost = await contract.cost();
+      if (onChainCost.gt(0)) {
+        costWei = onChainCost;
+        updatePrice();
+      }
+    } catch (e) {
+      // ignore, fallback stays
+    }
+  } catch (err) {
+    console.error(err);
+    setStatus(err.message || "FAILED TO CONNECT", "error");
+  }
+}
+
 
         handleAccountsChanged(accounts);
         setupProviderListeners(provider);
