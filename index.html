@@ -41,7 +41,7 @@
       width: auto;
       max-width: 100%;
       display: block;
-      mix-blend-mode: screen; /* make main.png blend with bg using SCREEN */
+      mix-blend-mode: screen;
     }
 
     .nav-links {
@@ -67,9 +67,7 @@
       transition: transform .15s ease, text-shadow .15s ease;
     }
 
-    .nav-links a::before {
-      content: "> ";
-    }
+    .nav-links a::before { content: "> "; }
 
     .nav-links a:hover {
       transform: translateX(8px);
@@ -80,12 +78,9 @@
         0 0 60px #7a0aff;
     }
 
-    /* ---------- RESPONSIVE HERO ---------- */
-
     @media (max-width: 900px) {
       .hero { height: auto; width: 100vw; display: block; }
       .hero-img { width: 100vw; height: auto; }
-
       .nav-links { left: 8%; bottom: 8%; gap: 0.9rem; }
       .nav-links a { font-size: 2.4rem; }
     }
@@ -105,7 +100,7 @@
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 10;
+      z-index: 10; /* BELOW WalletConnect modal */
     }
 
     .mint-popup {
@@ -216,7 +211,7 @@
     .wl-btn {
       background: #120019;
       border-style: dashed;
-      color: #f5d8ff !important; /* MAKE IT VISIBLE */
+      color: #f5d8ff !important;
       text-shadow:
         0 0 10px #b154ff,
         0 0 20px #a442ff;
@@ -246,7 +241,6 @@
 
 <body>
 
-<!-- HERO -->
 <section class="hero-wrapper">
   <div class="hero">
     <img src="main.png" class="hero-img" alt="Monadio Momurda Cartel">
@@ -260,7 +254,6 @@
   </div>
 </section>
 
-<!-- MINT POPUP -->
 <div class="mint-overlay" id="mintOverlay">
   <div class="mint-popup">
     <div class="close-popup" id="closeMint">×</div>
@@ -301,15 +294,13 @@
   </div>
 </div>
 
-<!-- WalletConnect Ethereum Provider (QR / mobile wallets) -->
+<!-- WalletConnect Ethereum Provider -->
 <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
-
 <!-- ethers.js -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <script>
   // ====== CONFIG ======
-
   const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
 
   const CONTRACT_ABI = [
@@ -322,18 +313,14 @@
   const MONAD_PARAMS = {
     chainId: MONAD_CHAIN_ID_HEX,
     chainName: "Monad Mainnet",
-    nativeCurrency: {
-      name: "Monad",
-      symbol: "MON",
-      decimals: 18
-    },
+    nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
     rpcUrls: ["https://rpc.monad.xyz"],
     blockExplorerUrls: ["https://monadvision.com"]
   };
 
-  const FALLBACK_COST_MON = "1111"; // if cost() fails
+  const FALLBACK_COST_MON = "1111";
 
-  // ====== POPUP OPEN/CLOSE ======
+  // ====== POPUP ======
   const openMint  = document.getElementById("openMint");
   const closeMint = document.getElementById("closeMint");
   const overlay   = document.getElementById("mintOverlay");
@@ -342,39 +329,27 @@
     e.preventDefault();
     overlay.style.display = "flex";
   });
-
-  closeMint.addEventListener("click", () => {
-    overlay.style.display = "none";
-  });
-
+  closeMint.addEventListener("click", () => { overlay.style.display = "none"; });
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) overlay.style.display = "none";
   });
 
-  // ====== PROVIDERS (Injected + WalletConnect Fallback) ======
-
-  let injectedProvider      = null; // window.ethereum-based
-  let walletConnectProvider = null; // WalletConnect EIP-1193
-  let activeProvider        = null; // whatever we actually use
+  // ====== PROVIDERS ======
+  let injectedProvider      = null;
+  let walletConnectProvider = null;
+  let activeProvider        = null;
 
   function detectInjectedProvider() {
     const eth = window.ethereum;
     if (!eth) return null;
 
-    // Multi-provider (EIP-6963 style)
     if (eth.providers && eth.providers.length) {
-      // Prefer MetaMask
       const metaMask = eth.providers.find(p => p.isMetaMask);
       if (metaMask) return metaMask;
-
-      // Prefer Trust Wallet next
       const trust = eth.providers.find(p => p.isTrust || p.isTrustWallet);
       if (trust) return trust;
-
       return eth.providers[0];
     }
-
-    // Single provider
     return eth;
   }
 
@@ -382,7 +357,6 @@
     return activeProvider;
   }
 
-  // WalletConnect helper (v2, via UMD global)
   async function getWalletConnectProvider() {
     if (walletConnectProvider) return walletConnectProvider;
 
@@ -392,12 +366,10 @@
     }
 
     walletConnectProvider = await wcModule.EthereumProvider.init({
-      projectId: "a76907beadb483551f410ad4716c28f3", // <<< put your WC projectId
-      chains: [143],          // Monad chain id (CAIP-2 numeric)
+      projectId: "a76907beadb483551f410ad4716c28f3", // your WC projectId
+      chains: [143],
       optionalChains: [143],
-      rpcMap: {
-        143: "https://rpc.monad.xyz"
-      },
+      rpcMap: { 143: "https://rpc.monad.xyz" },
       methods: [
         "eth_sendTransaction",
         "personal_sign",
@@ -455,10 +427,7 @@
 
   plusBtn.addEventListener("click", () => setAmount(amount + 1));
   minusBtn.addEventListener("click", () => setAmount(amount - 1));
-
   updatePrice();
-
-  // ====== ACCOUNT / LISTENER HELPERS ======
 
   function handleAccountsChanged(accounts) {
     if (!accounts || !accounts.length) {
@@ -486,14 +455,13 @@
     provider.on("chainChanged", (chainId) => {
       const hex = String(chainId).toLowerCase();
       if (hex !== MONAD_CHAIN_ID_HEX.toLowerCase()) {
-        setStatus("WRONG NETWORK – SELECT MONAD (CHAIN 143) IN WALLET", "error");
+        setStatus("WRONG NETWORK – SELECT MONAD (143)", "error");
       } else {
         setStatus("", "");
       }
     });
   }
 
-  // ====== ERROR PARSING ======
   function parseFriendlyError(err) {
     const nested =
       err?.data?.message ||
@@ -515,18 +483,13 @@
     return friendly;
   }
 
-  // ====== NETWORK HELPERS ======
   async function getCurrentChainIdHex(provider) {
     const raw = await provider.request({ method: "eth_chainId" });
 
     if (typeof raw === "string") {
-      if (raw.startsWith("0x") || raw.startsWith("0X")) {
-        return raw.toLowerCase();
-      }
+      if (raw.startsWith("0x") || raw.startsWith("0X")) return raw.toLowerCase();
       const num = Number(raw);
-      if (!Number.isNaN(num)) {
-        return "0x" + num.toString(16);
-      }
+      if (!Number.isNaN(num)) return "0x" + num.toString(16);
       return raw.toLowerCase();
     }
 
@@ -539,9 +502,7 @@
 
   async function ensureMonadNetwork(provider) {
     const p = provider || getActiveProvider();
-    if (!p) {
-      throw new Error("NO WALLET DETECTED");
-    }
+    if (!p) throw new Error("NO WALLET DETECTED");
 
     let currentHex;
     try {
@@ -551,9 +512,7 @@
       return;
     }
 
-    if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) {
-      return;
-    }
+    if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) return;
 
     try {
       await p.request({
@@ -569,16 +528,16 @@
           });
         } catch (addError) {
           console.error(addError);
-          throw new Error("PLEASE SWITCH NETWORK TO MONAD (CHAIN 143) IN YOUR WALLET");
+          throw new Error("PLEASE SWITCH NETWORK TO MONAD (143) IN YOUR WALLET");
         }
       } else {
         console.error(switchError);
-        throw new Error("PLEASE SWITCH NETWORK TO MONAD (CHAIN 143) IN YOUR WALLET");
+        throw new Error("PLEASE SWITCH NETWORK TO MONAD (143) IN YOUR WALLET");
       }
     }
   }
 
-  // ====== WALLET CONNECT / CONNECT BUTTON ======
+  // ====== CONNECT BUTTON ======
   async function connectWallet() {
     try {
       // 1) Try injected (MetaMask / Trust / etc.)
@@ -588,72 +547,20 @@
         const provider = injectedProvider;
         activeProvider = provider;
 
-     async function connectWallet() {
-  try {
-    // 1) Try injected (MetaMask / Trust / etc.)
-    injectedProvider = detectInjectedProvider();
-
-    if (injectedProvider) {
-      const provider = injectedProvider;
-      activeProvider = provider;
-
-      // 👉 ask for accounts FIRST
-      const accounts = await provider.request({
-        method: "eth_requestAccounts"
-      });
-      handleAccountsChanged(accounts);
-      setupProviderListeners(provider);
-
-      // 👉 then try to move them to Monad
-      await ensureMonadNetwork(provider);
-
-      setStatus("CONNECTED", "success");
-    } else {
-      // 2) Fallback → WalletConnect QR / mobile linking
-      setStatus("OPENING WALLETCONNECT…", "info");
-
-      const wc = await getWalletConnectProvider();
-      const accounts = await wc.enable(); // opens QR / app selector
-
-      if (!accounts || !accounts.length) {
-        throw new Error("NO ACCOUNT SELECTED IN WALLET");
-      }
-
-      activeProvider = wc;
-      handleAccountsChanged(accounts);
-      setupProviderListeners(wc);
-      connectBtn.textContent = "CONNECTED (WC)";
-      setStatus("CONNECTED VIA WALLETCONNECT", "success");
-    }
-
-    // Read on-chain cost (works for both provider types)
-    try {
-      const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
-      const onChainCost = await contract.cost();
-      if (onChainCost.gt(0)) {
-        costWei = onChainCost;
-        updatePrice();
-      }
-    } catch (e) {
-      // ignore, fallback stays
-    }
-  } catch (err) {
-    console.error(err);
-    setStatus(err.message || "FAILED TO CONNECT", "error");
-  }
-}
-
-
+        const accounts = await provider.request({
+          method: "eth_requestAccounts"
+        });
         handleAccountsChanged(accounts);
         setupProviderListeners(provider);
+
+        await ensureMonadNetwork(provider);
         setStatus("CONNECTED", "success");
       } else {
-        // 2) Fallback → WalletConnect QR
+        // 2) Fallback → WalletConnect
         setStatus("OPENING WALLETCONNECT…", "info");
 
         const wc = await getWalletConnectProvider();
-        const accounts = await wc.enable(); // opens QR modal
+        const accounts = await wc.enable(); // opens QR / app selector
 
         if (!accounts || !accounts.length) {
           throw new Error("NO ACCOUNT SELECTED IN WALLET");
@@ -666,7 +573,7 @@
         setStatus("CONNECTED VIA WALLETCONNECT", "success");
       }
 
-      // Read on-chain cost (works for both provider types)
+      // Read on-chain cost using activeProvider
       try {
         const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
@@ -676,7 +583,7 @@
           updatePrice();
         }
       } catch (e) {
-        // ignore, fallback stays
+        // ignore; fallback cost stays
       }
     } catch (err) {
       console.error(err);
@@ -689,14 +596,8 @@
   // ====== PAID MINT ======
   async function mint() {
     const provider = getActiveProvider();
-    if (!provider) {
-      setStatus("NO WALLET DETECTED", "error");
-      return;
-    }
-    if (!currentAccount) {
-      setStatus("CONNECT FIRST", "error");
-      return;
-    }
+    if (!provider) { setStatus("NO WALLET DETECTED", "error"); return; }
+    if (!currentAccount) { setStatus("CONNECT FIRST", "error"); return; }
 
     try {
       await ensureMonadNetwork(provider);
@@ -705,7 +606,7 @@
       const signer   = web3Provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      const value = costWei.mul(amount); // cost * _mintAmount
+      const value = costWei.mul(amount);
 
       setStatus("SENDING TRANSACTION…");
       mintBtn.disabled = true;
@@ -732,17 +633,11 @@
 
   mintBtn.addEventListener("click", mint);
 
-  // ====== FREE MINT (WL ONLY) ======
+  // ====== FREE MINT ======
   async function freeMint() {
     const provider = getActiveProvider();
-    if (!provider) {
-      setStatus("NO WALLET DETECTED", "error");
-      return;
-    }
-    if (!currentAccount) {
-      setStatus("CONNECT FIRST", "error");
-      return;
-    }
+    if (!provider) { setStatus("NO WALLET DETECTED", "error"); return; }
+    if (!currentAccount) { setStatus("CONNECT FIRST", "error"); return; }
 
     try {
       await ensureMonadNetwork(provider);
@@ -755,7 +650,7 @@
       mintBtn.disabled = true;
       freeMintBtn.disabled = true;
 
-      const tx = await contract.freeMint(); // no value
+      const tx = await contract.freeMint();
       setStatus("WAITING FOR CONFIRMATION…");
       await tx.wait();
 
