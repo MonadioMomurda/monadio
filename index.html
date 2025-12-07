@@ -572,10 +572,14 @@
 
         if (isPhantomMobile()) {
           alert(
-            "PHANTOM MOBILE DETECTED\n\n" +
-            "If Phantom shows a network switch popup, accept it.\n" +
-            "If it stays on Ethereum, open wallet settings and make sure Monad " +
-            "(chain 143) is supported, then try again."
+                        "PHANTOM MOBILE DETECTED\n\n" +
+                        "To mint on Monad with Phantom mobile:\n\n" +
+                        "1. Open Phantom → Settings → Active Networks.\n" +
+                        "2. ENABLE Monad network.\n" +
+                        "3. DISABLE every other EVM network (Ethereum, Base, etc.).\n" +
+                        "4. Restart the app, come back here and press CONNECT / MINT again.\n\n" +
+                        "If other EVM chains stay enabled or Monad is disabled, Phantom " +
+                        "may send the tx on the wrong chain or block it."
           );
         }
 
