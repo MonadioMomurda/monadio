@@ -47,7 +47,7 @@
     .nav-links {
       position: absolute;
       left: 10%;
-      bottom: 20%;
+      bottom: 14%;
       display: flex;
       flex-direction: column;
       gap: 1.2rem;
@@ -81,128 +81,13 @@
     @media (max-width: 900px) {
       .hero { height: auto; width: 100vw; display: block; }
       .hero-img { width: 100vw; height: auto; }
-      .nav-links { left: 8%; bottom: 18%; gap: 0.9rem; }
+      .nav-links { left: 8%; bottom: 8%; gap: 0.9rem; }
       .nav-links a { font-size: 2.4rem; }
     }
 
     @media (max-width: 600px) {
-      .nav-links { left: 7%; bottom: 18%; gap: 0.7rem; }
+      .nav-links { left: 7%; bottom: 6%; gap: 0.7rem; }
       .nav-links a { font-size: 2rem; }
-    }
-
-    /* ---------- MINTED COUNTER / CRT BAR ---------- */
-
-    .minted-widget {
-      position: absolute;
-      left: 50%;
-      bottom: 6%;
-      transform: translateX(-50%);
-      text-align: center;
-      pointer-events: none;
-      z-index: 4;
-    }
-
-    .minted-top {
-      display: flex;
-      justify-content: center;
-      gap: 2.5rem;
-      align-items: baseline;
-      margin-bottom: 0.5rem;
-    }
-
-    .minted-label,
-    .minted-count {
-      font-family: "JetBrains Mono","Fira Code","SF Mono","Roboto Mono",monospace;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: rgba(202,160,255,0.98);
-      text-shadow:
-        0 0 10px #b154ff,
-        0 0 24px #a442ff,
-        0 0 40px #9025ff;
-    }
-
-    .minted-label { font-size: 2.3rem; }
-    .minted-count { font-size: 2.1rem; }
-
-    .minted-bar-outer {
-      width: min(520px, 90vw);
-      border: 4px solid #b154ff;
-      box-shadow:
-        0 0 14px #b154ff,
-        0 0 30px #7a0aff;
-      padding: 6px;
-      background: rgba(5,0,16,0.9);
-      position: relative;
-      overflow: hidden;
-      margin: 0 auto;
-    }
-
-    .minted-bar-outer::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image: repeating-linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.03) 0px,
-        rgba(255,255,255,0.03) 1px,
-        transparent 1px,
-        transparent 3px
-      );
-      mix-blend-mode: screen;
-      pointer-events: none;
-    }
-
-    .minted-bar-inner {
-      width: 100%;
-      height: 32px;
-      background:
-        repeating-linear-gradient(
-          to right,
-          rgba(35,0,70,0.7) 0,
-          rgba(35,0,70,0.7) 24px,
-          rgba(5,0,20,1) 24px,
-          rgba(5,0,20,1) 30px
-        );
-      border: 2px solid #b154ff;
-      box-shadow:
-        inset 0 0 12px #2a003a;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .minted-bar-fill {
-      height: 100%;
-      width: 0%;
-      background:
-        repeating-linear-gradient(
-          to right,
-          #c267ff 0,
-          #c267ff 24px,
-          #7a0aff 24px,
-          #7a0aff 30px
-        );
-      box-shadow:
-        0 0 16px #d495ff,
-        0 0 34px #a442ff;
-      transition: width 0.6s ease-out;
-    }
-
-    @media (max-width: 900px) {
-      .minted-label { font-size: 1.6rem; }
-      .minted-count { font-size: 1.5rem; }
-      .minted-widget { bottom: 5%; }
-    }
-
-    @media (max-width: 600px) {
-      .minted-top {
-        flex-direction: column;
-        gap: 0.2rem;
-      }
-      .minted-label,
-      .minted-count {
-        font-size: 1.4rem;
-      }
     }
 
     /* ---------- MINT POPUP ---------- */
@@ -351,6 +236,51 @@
       color: #caa0ff;
       text-decoration: underline;
     }
+
+    /* ---------- BOTTOM ASCII MINT STATS ---------- */
+
+    .mint-stats-box {
+      position: fixed;
+      left: 50%;
+      bottom: 5%;
+      transform: translateX(-50%);
+      padding: 0.7rem 1.2rem;
+      border: 2px solid #b154ff;
+      border-radius: 4px;
+      background: transparent; /* no fill */
+      box-shadow:
+        0 0 12px rgba(177,84,255,0.9),
+        0 0 28px rgba(122,10,255,0.7);
+      z-index: 6;
+      max-width: 90vw;
+    }
+
+    .mint-stats-line {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: rgba(202,160,255,0.95);
+      letter-spacing: 0.12em;
+      text-shadow:
+        0 0 8px #b154ff,
+        0 0 18px #a442ff,
+        0 0 26px #9025ff;
+      white-space: nowrap;
+    }
+
+    .mint-stats-line + .mint-stats-line {
+      margin-top: 0.15rem;
+    }
+
+    @media (max-width: 600px) {
+      .mint-stats-box {
+        bottom: 3%;
+        padding: 0.5rem 0.9rem;
+      }
+      .mint-stats-line {
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+      }
+    }
   </style>
 </head>
 
@@ -366,24 +296,10 @@
       <a href="https://t.me/monadiocartel" target="_blank">CHAT</a>
       <a href="https://monadio.club" target="_blank">CHECK PRICE</a>
     </nav>
-
-    <!-- MINTED COUNTER / PROGRESS BAR -->
-    <div class="minted-widget">
-      <div class="minted-top">
-        <span class="minted-label">MINTED</span>
-        <span class="minted-count">
-          <span id="mintedCount">0</span> / 1111
-        </span>
-      </div>
-      <div class="minted-bar-outer">
-        <div class="minted-bar-inner">
-          <div class="minted-bar-fill" id="mintedFill"></div>
-        </div>
-      </div>
-    </div>
   </div>
 </section>
 
+<!-- MINT POPUP -->
 <div class="mint-overlay" id="mintOverlay">
   <div class="mint-popup">
     <div class="close-popup" id="closeMint">×</div>
@@ -424,6 +340,12 @@
   </div>
 </div>
 
+<!-- BOTTOM ASCII MINT STATS BOX -->
+<div class="mint-stats-box">
+  <div class="mint-stats-line" id="mintedText">>0/1111 MINTED</div>
+  <div class="mint-stats-line" id="barText">>[........................]</div>
+</div>
+
 <!-- WalletConnect Ethereum Provider -->
 <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
 <!-- ethers.js -->
@@ -432,7 +354,8 @@
 <script>
   // ====== CONFIG ======
   const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
-  const MAX_SUPPLY = 1111;
+  const MINT_MAX = 1111;                 // used if maxSupply() fails
+  const BAR_LENGTH = 24;                 // characters between [ and ]
 
   function isPhantomMobile() {
     return (
@@ -446,7 +369,8 @@
     "function mint(uint256 _mintAmount) payable",
     "function cost() view returns (uint256)",
     "function freeMint() external",
-    "function totalSupply() view returns (uint256)"
+    "function totalSupply() view returns (uint256)",
+    "function maxSupply() view returns (uint256)"
   ];
 
   let accounts = [];
@@ -548,6 +472,9 @@
   const mintBtn     = document.getElementById("mintNow");
   const freeMintBtn = document.getElementById("freeMintBtn");
 
+  const mintedTextEl = document.getElementById("mintedText");
+  const barTextEl    = document.getElementById("barText");
+
   function setStatus(msg, type = "") {
     statusEl.textContent = msg;
     statusEl.className = "mint-status" + (type ? " " + type : "");
@@ -646,13 +573,13 @@
     const p = provider || getActiveProvider();
     if (!p) throw new Error("NO WALLET DETECTED");
 
-    // Phantom mobile can't auto-switch chains; user must configure it
     if (isPhantomMobile()) {
       console.warn("Phantom mobile detected – skipping chain switching.");
       return;
     }
 
     let currentHex;
+
     try {
       currentHex = await getCurrentChainIdHex(p);
     } catch (e) {
@@ -687,30 +614,38 @@
     }
   }
 
-  // ====== MINTED COUNTER ======
-  async function refreshMintedCounter() {
+  // ====== ASCII MINT STATS ======
+  function renderMintStats(minted, max) {
+    mintedTextEl.textContent = ">" + minted + "/" + max + " MINTED";
+
+    const ratio  = Math.max(0, Math.min(1, minted / max));
+    const filled = Math.round(ratio * BAR_LENGTH);
+    const fillChars = "/".repeat(filled > 0 ? filled : 0);
+    const dotChars  = ".".repeat(Math.max(0, BAR_LENGTH - filled));
+    barTextEl.textContent = ">[" + fillChars + dotChars + "]";
+  }
+
+  async function refreshMintStats() {
     try {
-      const readProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
-      const readContract = new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        readProvider
-      );
+      const provider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-      const supplyBN = await readContract.totalSupply();
+      const supplyBN = await contract.totalSupply();
+      const maxBN    = await contract.maxSupply().catch(() => ethers.BigNumber.from(MINT_MAX));
+
       const minted = supplyBN.toNumber();
+      const max    = maxBN.toNumber();
 
-      const countEl = document.getElementById("mintedCount");
-      const fillEl  = document.getElementById("mintedFill");
-
-      countEl.textContent = minted;
-
-      const pct = Math.max(0, Math.min(100, (minted / MAX_SUPPLY) * 100));
-      fillEl.style.width = pct + "%";
-    } catch (err) {
-      console.error("Failed to refresh minted counter", err);
+      renderMintStats(minted, max);
+    } catch (e) {
+      console.error("Failed to refresh mint stats", e);
+      // fall back to static 0/max if needed
+      renderMintStats(0, MINT_MAX);
     }
   }
+
+  // run once on load
+  refreshMintStats();
 
   // ====== CONNECT BUTTON ======
   async function connectWallet() {
@@ -724,12 +659,8 @@
         if (isPhantomMobile()) {
           alert(
             "PHANTOM MOBILE DETECTED\n\n" +
-            "Phantom mobile can't auto-switch networks.\n\n" +
-            "For best results:\n" +
-            "1) Go to Phantom → Settings → Active Networks.\n" +
-            "2) ENABLE only Monad (EVM) and DISABLE other EVM chains.\n" +
-            "3) Make sure Monad (chain 143) is funded with MON.\n\n" +
-            "Then come back here and connect again."
+            "If it keeps trying to use Ethereum, open Phantom → Settings → Active Networks\n" +
+            "and turn Monad ON (and ideally other EVMs OFF), then try again."
           );
         }
 
@@ -759,6 +690,7 @@
         setStatus("CONNECTED VIA WALLETCONNECT", "success");
       }
 
+      // Try to read on-chain cost
       try {
         const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
         const contract     = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
@@ -768,7 +700,7 @@
           updatePrice();
         }
       } catch (e) {
-        // ignore, fallback stays
+        // ignore, fallback cost stays
       }
     } catch (err) {
       console.error(err);
@@ -802,9 +734,10 @@
       await tx.wait();
 
       setStatus("MINT SUCCESSFUL", "success");
-      await refreshMintedCounter();
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
+
+      refreshMintStats();
     } catch (err) {
       console.error(err);
       mintBtn.disabled = false;
@@ -841,9 +774,10 @@
       await tx.wait();
 
       setStatus("FREE MINT SUCCESSFUL", "success");
-      await refreshMintedCounter();
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
+
+      refreshMintStats();
     } catch (err) {
       console.error(err);
       mintBtn.disabled = false;
@@ -857,9 +791,6 @@
   }
 
   freeMintBtn.addEventListener("click", freeMint);
-
-  // initial counter load
-  refreshMintedCounter();
 </script>
 </body>
 </html>
