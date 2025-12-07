@@ -100,7 +100,7 @@
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 10;
+      z-index: 10; /* WalletConnect modal uses a higher z-index */
     }
 
     .mint-popup {
@@ -236,51 +236,6 @@
       color: #caa0ff;
       text-decoration: underline;
     }
-
-    /* ---------- BOTTOM ASCII MINT STATS ---------- */
-
-    .mint-stats-box {
-      position: fixed;
-      left: 50%;
-      bottom: 5%;
-      transform: translateX(-50%);
-      padding: 0.7rem 1.2rem;
-      border: 2px solid #b154ff;
-      border-radius: 4px;
-      background: transparent; /* no fill */
-      box-shadow:
-        0 0 12px rgba(177,84,255,0.9),
-        0 0 28px rgba(122,10,255,0.7);
-      z-index: 6;
-      max-width: 90vw;
-    }
-
-    .mint-stats-line {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: rgba(202,160,255,0.95);
-      letter-spacing: 0.12em;
-      text-shadow:
-        0 0 8px #b154ff,
-        0 0 18px #a442ff,
-        0 0 26px #9025ff;
-      white-space: nowrap;
-    }
-
-    .mint-stats-line + .mint-stats-line {
-      margin-top: 0.15rem;
-    }
-
-    @media (max-width: 600px) {
-      .mint-stats-box {
-        bottom: 3%;
-        padding: 0.5rem 0.9rem;
-      }
-      .mint-stats-line {
-        font-size: 0.9rem;
-        letter-spacing: 0.08em;
-      }
-    }
   </style>
 </head>
 
@@ -299,7 +254,6 @@
   </div>
 </section>
 
-<!-- MINT POPUP -->
 <div class="mint-overlay" id="mintOverlay">
   <div class="mint-popup">
     <div class="close-popup" id="closeMint">×</div>
@@ -340,12 +294,6 @@
   </div>
 </div>
 
-<!-- BOTTOM ASCII MINT STATS BOX -->
-<div class="mint-stats-box">
-  <div class="mint-stats-line" id="mintedText">>0/1111 MINTED</div>
-  <div class="mint-stats-line" id="barText">>[........................]</div>
-</div>
-
 <!-- WalletConnect Ethereum Provider -->
 <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
 <!-- ethers.js -->
@@ -354,25 +302,14 @@
 <script>
   // ====== CONFIG ======
   const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
-  const MINT_MAX = 1111;                 // used if maxSupply() fails
-  const BAR_LENGTH = 24;                 // characters between [ and ]
-
-  function isPhantomMobile() {
-    return (
-      /phantom/i.test(navigator.userAgent) &&
-      window.ethereum &&
-      window.ethereum.isPhantom
-    );
-  }
 
   const CONTRACT_ABI = [
     "function mint(uint256 _mintAmount) payable",
     "function cost() view returns (uint256)",
-    "function freeMint() external",
-    "function totalSupply() view returns (uint256)",
-    "function maxSupply() view returns (uint256)"
+    "function freeMint() external"
   ];
 
+  // Fallback so any stray references don't explode
   let accounts = [];
 
   const MONAD_CHAIN_ID_HEX = "0x8f"; // 143 mainnet
@@ -385,6 +322,15 @@
   };
 
   const FALLBACK_COST_MON = "1111";
+
+  // Detect Phantom mobile browser environment
+  function isPhantomMobile() {
+    return (
+      /phantom/i.test(navigator.userAgent) &&
+      window.ethereum &&
+      window.ethereum.isPhantom
+    );
+  }
 
   // ====== POPUP ======
   const openMint  = document.getElementById("openMint");
@@ -432,7 +378,7 @@
     }
 
     walletConnectProvider = await wcModule.EthereumProvider.init({
-      projectId: "a76907beadb483551f410ad4716c28f3",
+      projectId: "a76907beadb483551f410ad4716c28f3", // your WC projectId
       chains: [143],
       optionalChains: [143],
       rpcMap: { 143: "https://rpc.monad.xyz" },
@@ -472,9 +418,6 @@
   const mintBtn     = document.getElementById("mintNow");
   const freeMintBtn = document.getElementById("freeMintBtn");
 
-  const mintedTextEl = document.getElementById("mintedText");
-  const barTextEl    = document.getElementById("barText");
-
   function setStatus(msg, type = "") {
     statusEl.textContent = msg;
     statusEl.className = "mint-status" + (type ? " " + type : "");
@@ -498,15 +441,15 @@
   minusBtn.addEventListener("click", () => setAmount(amount - 1));
   updatePrice();
 
-  function handleAccountsChanged(accts) {
-    if (!accts || !accts.length) {
+  function handleAccountsChanged(accs) {
+    if (!accs || !accs.length) {
       currentAccount = null;
       walletEl.textContent = "NOT CONNECTED";
       mintBtn.disabled = true;
       freeMintBtn.disabled = true;
       connectBtn.textContent = "CONNECT";
     } else {
-      currentAccount = accts[0];
+      currentAccount = accs[0];
       walletEl.textContent = currentAccount;
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
@@ -517,8 +460,8 @@
   function setupProviderListeners(provider) {
     if (!provider || !provider.on) return;
 
-    provider.on("accountsChanged", (accts) => {
-      handleAccountsChanged(accts);
+    provider.on("accountsChanged", (accs) => {
+      handleAccountsChanged(accs);
     });
 
     provider.on("chainChanged", (chainId) => {
@@ -538,7 +481,7 @@
       err?.message ||
       "";
 
-    let friendly = nested;
+    let friendly = nested || "";
 
     if (nested.includes("Not eligible"))                     friendly = "NOT WHITELISTED / NO FREE MINT";
     if (nested.includes("not for sale yet"))                 friendly = "MINT NOT LIVE YET";
@@ -569,87 +512,58 @@
     return String(raw).toLowerCase();
   }
 
+  // Always try to get onto Monad (143)
   async function ensureMonadNetwork(provider) {
     const p = provider || getActiveProvider();
     if (!p) throw new Error("NO WALLET DETECTED");
 
-    if (isPhantomMobile()) {
-      console.warn("Phantom mobile detected – skipping chain switching.");
-      return;
-    }
-
     let currentHex;
-
     try {
       currentHex = await getCurrentChainIdHex(p);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to read chainId", e);
+      // If we can't read chainId we just bail and let the wallet handle it
       return;
     }
 
+    // Already on Monad
     if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) {
       return;
     }
 
     try {
+      // Ask wallet to switch to Monad (chain 143)
       await p.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: MONAD_CHAIN_ID_HEX }]
       });
     } catch (switchError) {
-      if (switchError.code === 4902) {
+      // Chain not added yet → try to add it
+      if (
+        switchError.code === 4902 ||
+        (typeof switchError.message === "string" &&
+         switchError.message.includes("Unrecognized chain ID"))
+      ) {
         try {
           await p.request({
             method: "wallet_addEthereumChain",
             params: [MONAD_PARAMS]
           });
         } catch (addError) {
-          console.error(addError);
-          throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
+          console.error("wallet_addEthereumChain failed", addError);
+          throw new Error("Please add Monad (chain 143) in your wallet, then try again.");
         }
       } else {
-        console.error(switchError);
-        throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
+        console.error("wallet_switchEthereumChain failed", switchError);
+        throw new Error("Please switch to Monad (chain 143) in your wallet, then try again.");
       }
     }
   }
 
-  // ====== ASCII MINT STATS ======
-  function renderMintStats(minted, max) {
-    mintedTextEl.textContent = ">" + minted + "/" + max + " MINTED";
-
-    const ratio  = Math.max(0, Math.min(1, minted / max));
-    const filled = Math.round(ratio * BAR_LENGTH);
-    const fillChars = "/".repeat(filled > 0 ? filled : 0);
-    const dotChars  = ".".repeat(Math.max(0, BAR_LENGTH - filled));
-    barTextEl.textContent = ">[" + fillChars + dotChars + "]";
-  }
-
-  async function refreshMintStats() {
-    try {
-      const provider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-
-      const supplyBN = await contract.totalSupply();
-      const maxBN    = await contract.maxSupply().catch(() => ethers.BigNumber.from(MINT_MAX));
-
-      const minted = supplyBN.toNumber();
-      const max    = maxBN.toNumber();
-
-      renderMintStats(minted, max);
-    } catch (e) {
-      console.error("Failed to refresh mint stats", e);
-      // fall back to static 0/max if needed
-      renderMintStats(0, MINT_MAX);
-    }
-  }
-
-  // run once on load
-  refreshMintStats();
-
   // ====== CONNECT BUTTON ======
   async function connectWallet() {
     try {
+      // 1) Try injected (MetaMask / Trust / Phantom, etc.)
       injectedProvider = detectInjectedProvider();
 
       if (injectedProvider) {
@@ -658,26 +572,32 @@
 
         if (isPhantomMobile()) {
           alert(
-            "PHANTOM MOBILE DETECTED\n\n" +
-            "If it keeps trying to use Ethereum, open Phantom → Settings → Active Networks\n" +
-            "and turn Monad ON (and ideally other EVMs OFF), then try again."
+                        "PHANTOM MOBILE DETECTED\n\n" +
+                        "To mint on Monad with Phantom mobile:\n\n" +
+                        "1. Open Phantom → Settings → Active Networks.\n" +
+                        "2. ENABLE Monad network.\n" +
+                        "3. DISABLE every other EVM network (Ethereum, Base, etc.).\n" +
+                        "4. Restart the app, come back here and press CONNECT / MINT again.\n\n" +
+                        "If other EVM chains stay enabled or Monad is disabled, Phantom " +
+                        "may send the tx on the wrong chain or block it."
           );
         }
 
-        const accts = await provider.request({
+        const accs = await provider.request({
           method: "eth_requestAccounts"
         });
-        handleAccountsChanged(accts);
+        handleAccountsChanged(accs);
         setupProviderListeners(provider);
 
         await ensureMonadNetwork(provider);
 
         setStatus("CONNECTED", "success");
       } else {
+        // 2) Fallback → WalletConnect (mobile normal browser etc.)
         setStatus("OPENING WALLETCONNECT…", "info");
 
         const wc = await getWalletConnectProvider();
-        const wcAccounts = await wc.enable();
+        const wcAccounts = await wc.enable(); // opens QR / app selector
 
         if (!wcAccounts || !wcAccounts.length) {
           throw new Error("NO ACCOUNT SELECTED IN WALLET");
@@ -690,7 +610,7 @@
         setStatus("CONNECTED VIA WALLETCONNECT", "success");
       }
 
-      // Try to read on-chain cost
+      // Try to read on-chain cost using whichever provider is active
       try {
         const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
         const contract     = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
@@ -700,7 +620,7 @@
           updatePrice();
         }
       } catch (e) {
-        // ignore, fallback cost stays
+        // ignore, keep fallback cost
       }
     } catch (err) {
       console.error(err);
@@ -736,8 +656,6 @@
       setStatus("MINT SUCCESSFUL", "success");
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
-
-      refreshMintStats();
     } catch (err) {
       console.error(err);
       mintBtn.disabled = false;
@@ -776,8 +694,6 @@
       setStatus("FREE MINT SUCCESSFUL", "success");
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
-
-      refreshMintStats();
     } catch (err) {
       console.error(err);
       mintBtn.disabled = false;
