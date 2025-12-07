@@ -47,7 +47,7 @@
     .nav-links {
       position: absolute;
       left: 10%;
-      bottom: 14%;
+      bottom: 20%;
       display: flex;
       flex-direction: column;
       gap: 1.2rem;
@@ -81,13 +81,128 @@
     @media (max-width: 900px) {
       .hero { height: auto; width: 100vw; display: block; }
       .hero-img { width: 100vw; height: auto; }
-      .nav-links { left: 8%; bottom: 8%; gap: 0.9rem; }
+      .nav-links { left: 8%; bottom: 18%; gap: 0.9rem; }
       .nav-links a { font-size: 2.4rem; }
     }
 
     @media (max-width: 600px) {
-      .nav-links { left: 7%; bottom: 6%; gap: 0.7rem; }
+      .nav-links { left: 7%; bottom: 18%; gap: 0.7rem; }
       .nav-links a { font-size: 2rem; }
+    }
+
+    /* ---------- MINTED COUNTER / CRT BAR ---------- */
+
+    .minted-widget {
+      position: absolute;
+      left: 50%;
+      bottom: 6%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .minted-top {
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+    }
+
+    .minted-label,
+    .minted-count {
+      font-family: "JetBrains Mono","Fira Code","SF Mono","Roboto Mono",monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(202,160,255,0.98);
+      text-shadow:
+        0 0 10px #b154ff,
+        0 0 24px #a442ff,
+        0 0 40px #9025ff;
+    }
+
+    .minted-label { font-size: 2.3rem; }
+    .minted-count { font-size: 2.1rem; }
+
+    .minted-bar-outer {
+      width: min(520px, 90vw);
+      border: 4px solid #b154ff;
+      box-shadow:
+        0 0 14px #b154ff,
+        0 0 30px #7a0aff;
+      padding: 6px;
+      background: rgba(5,0,16,0.9);
+      position: relative;
+      overflow: hidden;
+      margin: 0 auto;
+    }
+
+    .minted-bar-outer::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .minted-bar-inner {
+      width: 100%;
+      height: 32px;
+      background:
+        repeating-linear-gradient(
+          to right,
+          rgba(35,0,70,0.7) 0,
+          rgba(35,0,70,0.7) 24px,
+          rgba(5,0,20,1) 24px,
+          rgba(5,0,20,1) 30px
+        );
+      border: 2px solid #b154ff;
+      box-shadow:
+        inset 0 0 12px #2a003a;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .minted-bar-fill {
+      height: 100%;
+      width: 0%;
+      background:
+        repeating-linear-gradient(
+          to right,
+          #c267ff 0,
+          #c267ff 24px,
+          #7a0aff 24px,
+          #7a0aff 30px
+        );
+      box-shadow:
+        0 0 16px #d495ff,
+        0 0 34px #a442ff;
+      transition: width 0.6s ease-out;
+    }
+
+    @media (max-width: 900px) {
+      .minted-label { font-size: 1.6rem; }
+      .minted-count { font-size: 1.5rem; }
+      .minted-widget { bottom: 5%; }
+    }
+
+    @media (max-width: 600px) {
+      .minted-top {
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      .minted-label,
+      .minted-count {
+        font-size: 1.4rem;
+      }
     }
 
     /* ---------- MINT POPUP ---------- */
@@ -100,7 +215,7 @@
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 10; /* WalletConnect modal uses a higher z-index */
+      z-index: 10;
     }
 
     .mint-popup {
@@ -251,6 +366,21 @@
       <a href="https://t.me/monadiocartel" target="_blank">CHAT</a>
       <a href="https://monadio.club" target="_blank">CHECK PRICE</a>
     </nav>
+
+    <!-- MINTED COUNTER / PROGRESS BAR -->
+    <div class="minted-widget">
+      <div class="minted-top">
+        <span class="minted-label">MINTED</span>
+        <span class="minted-count">
+          <span id="mintedCount">0</span> / 1111
+        </span>
+      </div>
+      <div class="minted-bar-outer">
+        <div class="minted-bar-inner">
+          <div class="minted-bar-fill" id="mintedFill"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -302,14 +432,23 @@
 <script>
   // ====== CONFIG ======
   const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
+  const MAX_SUPPLY = 1111;
+
+  function isPhantomMobile() {
+    return (
+      /phantom/i.test(navigator.userAgent) &&
+      window.ethereum &&
+      window.ethereum.isPhantom
+    );
+  }
 
   const CONTRACT_ABI = [
     "function mint(uint256 _mintAmount) payable",
     "function cost() view returns (uint256)",
-    "function freeMint() external"
+    "function freeMint() external",
+    "function totalSupply() view returns (uint256)"
   ];
 
-  // Fallback so any stray references don't explode
   let accounts = [];
 
   const MONAD_CHAIN_ID_HEX = "0x8f"; // 143 mainnet
@@ -322,15 +461,6 @@
   };
 
   const FALLBACK_COST_MON = "1111";
-
-  // Detect Phantom mobile browser environment
-  function isPhantomMobile() {
-    return (
-      /phantom/i.test(navigator.userAgent) &&
-      window.ethereum &&
-      window.ethereum.isPhantom
-    );
-  }
 
   // ====== POPUP ======
   const openMint  = document.getElementById("openMint");
@@ -378,7 +508,7 @@
     }
 
     walletConnectProvider = await wcModule.EthereumProvider.init({
-      projectId: "a76907beadb483551f410ad4716c28f3", // your WC projectId
+      projectId: "a76907beadb483551f410ad4716c28f3",
       chains: [143],
       optionalChains: [143],
       rpcMap: { 143: "https://rpc.monad.xyz" },
@@ -441,15 +571,15 @@
   minusBtn.addEventListener("click", () => setAmount(amount - 1));
   updatePrice();
 
-  function handleAccountsChanged(accs) {
-    if (!accs || !accs.length) {
+  function handleAccountsChanged(accts) {
+    if (!accts || !accts.length) {
       currentAccount = null;
       walletEl.textContent = "NOT CONNECTED";
       mintBtn.disabled = true;
       freeMintBtn.disabled = true;
       connectBtn.textContent = "CONNECT";
     } else {
-      currentAccount = accs[0];
+      currentAccount = accts[0];
       walletEl.textContent = currentAccount;
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
@@ -460,8 +590,8 @@
   function setupProviderListeners(provider) {
     if (!provider || !provider.on) return;
 
-    provider.on("accountsChanged", (accs) => {
-      handleAccountsChanged(accs);
+    provider.on("accountsChanged", (accts) => {
+      handleAccountsChanged(accts);
     });
 
     provider.on("chainChanged", (chainId) => {
@@ -481,7 +611,7 @@
       err?.message ||
       "";
 
-    let friendly = nested || "";
+    let friendly = nested;
 
     if (nested.includes("Not eligible"))                     friendly = "NOT WHITELISTED / NO FREE MINT";
     if (nested.includes("not for sale yet"))                 friendly = "MINT NOT LIVE YET";
@@ -512,58 +642,79 @@
     return String(raw).toLowerCase();
   }
 
-  // Always try to get onto Monad (143)
   async function ensureMonadNetwork(provider) {
     const p = provider || getActiveProvider();
     if (!p) throw new Error("NO WALLET DETECTED");
+
+    // Phantom mobile can't auto-switch chains; user must configure it
+    if (isPhantomMobile()) {
+      console.warn("Phantom mobile detected – skipping chain switching.");
+      return;
+    }
 
     let currentHex;
     try {
       currentHex = await getCurrentChainIdHex(p);
     } catch (e) {
-      console.error("Failed to read chainId", e);
-      // If we can't read chainId we just bail and let the wallet handle it
+      console.error(e);
       return;
     }
 
-    // Already on Monad
     if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) {
       return;
     }
 
     try {
-      // Ask wallet to switch to Monad (chain 143)
       await p.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: MONAD_CHAIN_ID_HEX }]
       });
     } catch (switchError) {
-      // Chain not added yet → try to add it
-      if (
-        switchError.code === 4902 ||
-        (typeof switchError.message === "string" &&
-         switchError.message.includes("Unrecognized chain ID"))
-      ) {
+      if (switchError.code === 4902) {
         try {
           await p.request({
             method: "wallet_addEthereumChain",
             params: [MONAD_PARAMS]
           });
         } catch (addError) {
-          console.error("wallet_addEthereumChain failed", addError);
-          throw new Error("Please add Monad (chain 143) in your wallet, then try again.");
+          console.error(addError);
+          throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
         }
       } else {
-        console.error("wallet_switchEthereumChain failed", switchError);
-        throw new Error("Please switch to Monad (chain 143) in your wallet, then try again.");
+        console.error(switchError);
+        throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
       }
+    }
+  }
+
+  // ====== MINTED COUNTER ======
+  async function refreshMintedCounter() {
+    try {
+      const readProvider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
+      const readContract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        readProvider
+      );
+
+      const supplyBN = await readContract.totalSupply();
+      const minted = supplyBN.toNumber();
+
+      const countEl = document.getElementById("mintedCount");
+      const fillEl  = document.getElementById("mintedFill");
+
+      countEl.textContent = minted;
+
+      const pct = Math.max(0, Math.min(100, (minted / MAX_SUPPLY) * 100));
+      fillEl.style.width = pct + "%";
+    } catch (err) {
+      console.error("Failed to refresh minted counter", err);
     }
   }
 
   // ====== CONNECT BUTTON ======
   async function connectWallet() {
     try {
-      // 1) Try injected (MetaMask / Trust / Phantom, etc.)
       injectedProvider = detectInjectedProvider();
 
       if (injectedProvider) {
@@ -572,32 +723,30 @@
 
         if (isPhantomMobile()) {
           alert(
-                        "PHANTOM MOBILE DETECTED\n\n" +
-                        "To mint on Monad with Phantom mobile:\n\n" +
-                        "1. Open Phantom → Settings → Active Networks.\n" +
-                        "2. ENABLE Monad network.\n" +
-                        "3. DISABLE every other EVM network (Ethereum, Base, etc.).\n" +
-                        "4. Restart the app, come back here and press CONNECT / MINT again.\n\n" +
-                        "If other EVM chains stay enabled or Monad is disabled, Phantom " +
-                        "may send the tx on the wrong chain or block it."
+            "PHANTOM MOBILE DETECTED\n\n" +
+            "Phantom mobile can't auto-switch networks.\n\n" +
+            "For best results:\n" +
+            "1) Go to Phantom → Settings → Active Networks.\n" +
+            "2) ENABLE only Monad (EVM) and DISABLE other EVM chains.\n" +
+            "3) Make sure Monad (chain 143) is funded with MON.\n\n" +
+            "Then come back here and connect again."
           );
         }
 
-        const accs = await provider.request({
+        const accts = await provider.request({
           method: "eth_requestAccounts"
         });
-        handleAccountsChanged(accs);
+        handleAccountsChanged(accts);
         setupProviderListeners(provider);
 
         await ensureMonadNetwork(provider);
 
         setStatus("CONNECTED", "success");
       } else {
-        // 2) Fallback → WalletConnect (mobile normal browser etc.)
         setStatus("OPENING WALLETCONNECT…", "info");
 
         const wc = await getWalletConnectProvider();
-        const wcAccounts = await wc.enable(); // opens QR / app selector
+        const wcAccounts = await wc.enable();
 
         if (!wcAccounts || !wcAccounts.length) {
           throw new Error("NO ACCOUNT SELECTED IN WALLET");
@@ -610,7 +759,6 @@
         setStatus("CONNECTED VIA WALLETCONNECT", "success");
       }
 
-      // Try to read on-chain cost using whichever provider is active
       try {
         const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
         const contract     = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
@@ -620,7 +768,7 @@
           updatePrice();
         }
       } catch (e) {
-        // ignore, keep fallback cost
+        // ignore, fallback stays
       }
     } catch (err) {
       console.error(err);
@@ -654,6 +802,7 @@
       await tx.wait();
 
       setStatus("MINT SUCCESSFUL", "success");
+      await refreshMintedCounter();
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
     } catch (err) {
@@ -692,6 +841,7 @@
       await tx.wait();
 
       setStatus("FREE MINT SUCCESSFUL", "success");
+      await refreshMintedCounter();
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
     } catch (err) {
@@ -707,6 +857,9 @@
   }
 
   freeMintBtn.addEventListener("click", freeMint);
+
+  // initial counter load
+  refreshMintedCounter();
 </script>
 </body>
 </html>
