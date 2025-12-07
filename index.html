@@ -236,6 +236,51 @@
       color: #caa0ff;
       text-decoration: underline;
     }
+
+    /* ---------- BOTTOM ASCII MINT STATS ---------- */
+
+    .mint-stats-box {
+      position: fixed;
+      left: 50%;
+      bottom: 5%;
+      transform: translateX(-50%);
+      padding: 0.7rem 1.2rem;
+      border: 2px solid #b154ff;
+      border-radius: 4px;
+      background: transparent;
+      box-shadow:
+        0 0 12px rgba(177,84,255,0.9),
+        0 0 28px rgba(122,10,255,0.7);
+      z-index: 6;
+      max-width: 90vw;
+    }
+
+    .mint-stats-line {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: rgba(202,160,255,0.95);
+      letter-spacing: 0.12em;
+      text-shadow:
+        0 0 8px #b154ff,
+        0 0 18px #a442ff,
+        0 0 26px #9025ff;
+      white-space: nowrap;
+    }
+
+    .mint-stats-line + .mint-stats-line {
+      margin-top: 0.15rem;
+    }
+
+    @media (max-width: 600px) {
+      .mint-stats-box {
+        bottom: 3%;
+        padding: 0.5rem 0.9rem;
+      }
+      .mint-stats-line {
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+      }
+    }
   </style>
 </head>
 
@@ -294,6 +339,12 @@
   </div>
 </div>
 
+<!-- BOTTOM ASCII MINT STATS BOX -->
+<div class="mint-stats-box">
+  <div class="mint-stats-line" id="mintedText">>0/1111 MINTED</div>
+  <div class="mint-stats-line" id="barText">>[........................]</div>
+</div>
+
 <!-- WalletConnect Ethereum Provider -->
 <script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
 <!-- ethers.js -->
@@ -306,7 +357,9 @@
   const CONTRACT_ABI = [
     "function mint(uint256 _mintAmount) payable",
     "function cost() view returns (uint256)",
-    "function freeMint() external"
+    "function freeMint() external",
+    "function totalSupply() view returns (uint256)",
+    "function maxSupply() view returns (uint256)"
   ];
 
   // Fallback so any stray references don't explode
@@ -322,6 +375,8 @@
   };
 
   const FALLBACK_COST_MON = "1111";
+  const MINT_MAX_FALLBACK = 1111;   // used if maxSupply() fails
+  const BAR_LENGTH        = 24;     // characters between [ and ]
 
   // Detect Phantom mobile browser environment
   function isPhantomMobile() {
@@ -417,6 +472,9 @@
   const connectBtn  = document.getElementById("connectWallet");
   const mintBtn     = document.getElementById("mintNow");
   const freeMintBtn = document.getElementById("freeMintBtn");
+
+  const mintedTextEl = document.getElementById("mintedText");
+  const barTextEl    = document.getElementById("barText");
 
   function setStatus(msg, type = "") {
     statusEl.textContent = msg;
@@ -560,6 +618,38 @@
     }
   }
 
+  // ====== ASCII MINT STATS ======
+  function renderMintStats(minted, max) {
+    mintedTextEl.textContent = ">" + minted + "/" + max + " MINTED";
+
+    const ratio  = Math.max(0, Math.min(1, minted / max));
+    const filled = Math.round(ratio * BAR_LENGTH);
+    const fillChars = "/".repeat(filled > 0 ? filled : 0);
+    const dotChars  = ".".repeat(Math.max(0, BAR_LENGTH - filled));
+    barTextEl.textContent = ">[" + fillChars + dotChars + "]";
+  }
+
+  async function refreshMintStats() {
+    try {
+      const provider = new ethers.providers.JsonRpcProvider("https://rpc.monad.xyz");
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+      const supplyBN = await contract.totalSupply();
+      const maxBN    = await contract.maxSupply().catch(() => ethers.BigNumber.from(MINT_MAX_FALLBACK));
+
+      const minted = supplyBN.toNumber();
+      const max    = maxBN.toNumber();
+
+      renderMintStats(minted, max);
+    } catch (e) {
+      console.error("Failed to refresh mint stats", e);
+      renderMintStats(0, MINT_MAX_FALLBACK);
+    }
+  }
+
+  // run once on load
+  refreshMintStats();
+
   // ====== CONNECT BUTTON ======
   async function connectWallet() {
     try {
@@ -572,14 +662,14 @@
 
         if (isPhantomMobile()) {
           alert(
-                        "PHANTOM MOBILE DETECTED\n\n" +
-                        "To mint on Monad with Phantom mobile:\n\n" +
-                        "1. Open Phantom → Settings → Active Networks.\n" +
-                        "2. ENABLE Monad network.\n" +
-                        "3. DISABLE every other EVM network (Ethereum, Base, etc.).\n" +
-                        "4. Restart the app, come back here and press CONNECT / MINT again.\n\n" +
-                        "If other EVM chains stay enabled or Monad is disabled, Phantom " +
-                        "may send the tx on the wrong chain or block it."
+            "PHANTOM MOBILE DETECTED\n\n" +
+            "To mint on Monad with Phantom mobile:\n\n" +
+            "1. Open Phantom → Settings → Active Networks.\n" +
+            "2. ENABLE Monad network.\n" +
+            "3. DISABLE every other EVM network (Ethereum, Base, etc.).\n" +
+            "4. Restart the app, come back here and press CONNECT / MINT again.\n\n" +
+            "If other EVM chains stay enabled or Monad is disabled, Phantom " +
+            "may send the tx on the wrong chain or block it."
           );
         }
 
@@ -656,6 +746,8 @@
       setStatus("MINT SUCCESSFUL", "success");
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
+
+      refreshMintStats();
     } catch (err) {
       console.error(err);
       mintBtn.disabled = false;
@@ -694,6 +786,8 @@
       setStatus("FREE MINT SUCCESSFUL", "success");
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
+
+      refreshMintStats();
     } catch (err) {
       console.error(err);
       mintBtn.disabled = false;
