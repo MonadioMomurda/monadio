@@ -1,297 +1,298 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Monadio Momurda Cartel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8" />
+<title>Monadio Momurda Cartel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body { height: 100%; overflow-x: hidden; }
+html, body { height: 100%; overflow-x: hidden; }
 
-    body {
-      min-height: 100vh;
-      background: #000 url("bg.png") center center / cover fixed no-repeat;
-      font-family: "JetBrains Mono","Fira Code","SF Mono","Roboto Mono",monospace;
-      color: #fff;
-    }
+body {
+min-height: 100vh;
+background: #000 url("bg.png") center center / cover fixed no-repeat;
+font-family: "JetBrains Mono","Fira Code","SF Mono","Roboto Mono",monospace;
+color: #fff;
+}
 
-    /* ---------- HERO ---------- */
+/* ---------- HERO ---------- */
 
-    .hero-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding-inline: 1rem;
-      width: 100%;
-    }
+.hero-wrapper {
+display: flex;
+justify-content: center;
+align-items: center;
+padding-inline: 1rem;
+width: 100%;
+}
 
-    .hero {
-      position: relative;
-      height: 100vh;
-      max-width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+.hero {
+position: relative;
+height: 100vh;
+max-width: 100%;
+display: flex;
+justify-content: center;
+align-items: center;
+}
 
-    .hero-img {
-      height: 100%;
-      width: auto;
-      max-width: 100%;
-      display: block;
-      mix-blend-mode: screen;
-    }
+.hero-img {
+height: 100%;
+width: auto;
+max-width: 100%;
+display: block;
+mix-blend-mode: screen;
+}
 
-    .nav-links {
-      position: absolute;
-      left: 10%;
-      bottom: 14%;
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-      z-index: 5;
-    }
+.nav-links {
+position: absolute;
+left: 10%;
+bottom: 14%;
+display: flex;
+flex-direction: column;
+gap: 1.2rem;
+z-index: 5;
+}
 
-    .nav-links a {
-      text-decoration: none;
-      font-size: 4.5rem;
-      font-weight: 700;
-      color: rgba(202,160,255,0.95);
-      letter-spacing: 0.06em;
-      text-shadow:
-        0 0 10px #b154ff,
-        0 0 22px #a442ff,
-        0 0 36px #9025ff;
-      transition: transform .15s ease, text-shadow .15s ease;
-    }
+.nav-links a {
+text-decoration: none;
+font-size: 4.5rem;
+font-weight: 700;
+color: rgba(202,160,255,0.95);
+letter-spacing: 0.06em;
+text-shadow:
+0 0 10px #b154ff,
+0 0 22px #a442ff,
+0 0 36px #9025ff;
+transition: transform .15s ease, text-shadow .15s ease;
+}
 
-    .nav-links a::before { content: "> "; }
+.nav-links a::before { content: "> "; }
 
-    .nav-links a:hover {
-      transform: translateX(8px);
-      text-shadow:
-        0 0 12px #b154ff,
-        0 0 26px #a442ff,
-        0 0 42px #9025ff,
-        0 0 60px #7a0aff;
-    }
+.nav-links a:hover {
+transform: translateX(8px);
+text-shadow:
+0 0 12px #b154ff,
+0 0 26px #a442ff,
+0 0 42px #9025ff,
+0 0 60px #7a0aff;
+}
 
-    @media (max-width: 900px) {
-      .hero { height: auto; width: 100vw; display: block; }
-      .hero-img { width: 100vw; height: auto; }
-      .nav-links { left: 8%; bottom: 8%; gap: 0.9rem; }
-      .nav-links a { font-size: 2.4rem; }
-    }
+@media (max-width: 900px) {
+.hero { height: auto; width: 100vw; display: block; }
+.hero-img { width: 100vw; height: auto; }
+.nav-links { left: 8%; bottom: 8%; gap: 0.9rem; }
+.nav-links a { font-size: 2.4rem; }
+}
 
-    @media (max-width: 600px) {
-      .nav-links { left: 7%; bottom: 6%; gap: 0.7rem; }
-      .nav-links a { font-size: 2rem; }
-    }
+@media (max-width: 600px) {
+.nav-links { left: 7%; bottom: 6%; gap: 0.7rem; }
+.nav-links a { font-size: 2rem; }
+}
 
-    /* ---------- MINT POPUP ---------- */
+/* ---------- MINT POPUP ---------- */
 
-    .mint-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(3px);
-      display: none;
-      justify-content: center;
-      align-items: center;
+.mint-overlay {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.8);
+backdrop-filter: blur(3px);
+display: none;
+justify-content: center;
+align-items: center;
       z-index: 10; /* BELOW WalletConnect modal */
-    }
+      z-index: 10; /* WalletConnect modal uses a higher z-index */
+}
 
-    .mint-popup {
-      width: 92%;
-      max-width: 480px;
-      background: #050505;
-      border-radius: 12px;
-      border: 2px solid rgba(202,160,255,0.5);
-      box-shadow:
-        0 0 30px rgba(202,160,255,0.7),
-        0 0 60px rgba(100,40,150,0.8);
-      padding: 2rem;
-      position: relative;
-      text-align: center;
-    }
+.mint-popup {
+width: 92%;
+max-width: 480px;
+background: #050505;
+border-radius: 12px;
+border: 2px solid rgba(202,160,255,0.5);
+box-shadow:
+0 0 30px rgba(202,160,255,0.7),
+0 0 60px rgba(100,40,150,0.8);
+padding: 2rem;
+position: relative;
+text-align: center;
+}
 
-    .popup-title {
-      font-size: 2rem;
-      letter-spacing: 0.15em;
-      color: #f7e8ff;
-      margin-bottom: 0.6rem;
-    }
+.popup-title {
+font-size: 2rem;
+letter-spacing: 0.15em;
+color: #f7e8ff;
+margin-bottom: 0.6rem;
+}
 
-    .popup-sub {
-      font-size: 0.9rem;
-      opacity: 0.8;
-      margin-bottom: 2rem;
-    }
+.popup-sub {
+font-size: 0.9rem;
+opacity: 0.8;
+margin-bottom: 2rem;
+}
 
-    .close-popup {
-      position: absolute;
-      top: 12px;
-      right: 16px;
-      font-size: 1.6rem;
-      cursor: pointer;
-      color: #d9b3ff;
-      text-shadow: 0 0 10px rgba(202,160,255,1);
-    }
+.close-popup {
+position: absolute;
+top: 12px;
+right: 16px;
+font-size: 1.6rem;
+cursor: pointer;
+color: #d9b3ff;
+text-shadow: 0 0 10px rgba(202,160,255,1);
+}
 
-    .popup-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.3rem;
-    }
+.popup-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 1.3rem;
+}
 
-    .popup-label {
-      font-size: 1rem;
-      letter-spacing: .08em;
-    }
+.popup-label {
+font-size: 1rem;
+letter-spacing: .08em;
+}
 
-    .amount-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-    }
+.amount-controls {
+display: flex;
+align-items: center;
+gap: 0.8rem;
+}
 
-    .amount-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid rgba(200,150,255,0.9);
-      background: transparent;
-      color: #e6d1ff;
-      cursor: pointer;
-      font-size: 1.3rem;
-      transition: 0.1s ease;
-    }
+.amount-btn {
+width: 32px;
+height: 32px;
+border-radius: 50%;
+border: 1px solid rgba(200,150,255,0.9);
+background: transparent;
+color: #e6d1ff;
+cursor: pointer;
+font-size: 1.3rem;
+transition: 0.1s ease;
+}
 
-    .amount-btn:hover {
-      background: rgba(200,150,255,0.18);
-      transform: translateY(-1px);
-    }
+.amount-btn:hover {
+background: rgba(200,150,255,0.18);
+transform: translateY(-1px);
+}
 
-    .amount-value {
-      min-width: 34px;
-      text-align: center;
-      font-size: 1.3rem;
-    }
+.amount-value {
+min-width: 34px;
+text-align: center;
+font-size: 1.3rem;
+}
 
-    .button-primary {
-      width: 100%;
-      border-radius: 999px;
-      padding: 0.9rem;
-      border: 1px solid rgba(200,150,255,0.9);
-      background: linear-gradient(135deg,#b365ff,#ff9dff);
-      color: #100017;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      cursor: pointer;
-      text-transform: uppercase;
-      box-shadow: 0 0 16px rgba(200,150,255,0.35);
-      margin-top: 0.7rem;
-      font-size: 0.86rem;
-    }
+.button-primary {
+width: 100%;
+border-radius: 999px;
+padding: 0.9rem;
+border: 1px solid rgba(200,150,255,0.9);
+background: linear-gradient(135deg,#b365ff,#ff9dff);
+color: #100017;
+font-weight: 700;
+letter-spacing: 0.12em;
+cursor: pointer;
+text-transform: uppercase;
+box-shadow: 0 0 16px rgba(200,150,255,0.35);
+margin-top: 0.7rem;
+font-size: 0.86rem;
+}
 
-    .button-primary:disabled {
-      opacity: 0.4;
-      cursor: default;
-      box-shadow: none;
-    }
+.button-primary:disabled {
+opacity: 0.4;
+cursor: default;
+box-shadow: none;
+}
 
-    .connect-btn {
-      background: transparent;
-      color: #d9c0ff;
-    }
+.connect-btn {
+background: transparent;
+color: #d9c0ff;
+}
 
-    .wl-btn {
-      background: #120019;
-      border-style: dashed;
-      color: #f5d8ff !important;
-      text-shadow:
-        0 0 10px #b154ff,
-        0 0 20px #a442ff;
-    }
+.wl-btn {
+background: #120019;
+border-style: dashed;
+color: #f5d8ff !important;
+text-shadow:
+0 0 10px #b154ff,
+0 0 20px #a442ff;
+}
 
-    .mint-status {
-      margin-top: 1rem;
-      min-height: 1.2rem;
-      font-size: 0.85rem;
-    }
+.mint-status {
+margin-top: 1rem;
+min-height: 1.2rem;
+font-size: 0.85rem;
+}
 
-    .mint-status.error   { color: #ff8f9a; }
-    .mint-status.success { color: #9bffb5; }
+.mint-status.error   { color: #ff8f9a; }
+.mint-status.success { color: #9bffb5; }
 
-    .contract-line {
-      margin-top: 0.6rem;
-      font-size: 0.75rem;
-      opacity: 0.75;
-    }
+.contract-line {
+margin-top: 0.6rem;
+font-size: 0.75rem;
+opacity: 0.75;
+}
 
-    .contract-line a {
-      color: #caa0ff;
-      text-decoration: underline;
-    }
-  </style>
+.contract-line a {
+color: #caa0ff;
+text-decoration: underline;
+}
+</style>
 </head>
 
 <body>
 
 <section class="hero-wrapper">
-  <div class="hero">
-    <img src="main.png" class="hero-img" alt="Monadio Momurda Cartel">
+<div class="hero">
+<img src="main.png" class="hero-img" alt="Monadio Momurda Cartel">
 
-    <nav class="nav-links">
-      <a href="#" id="openMint">MINT</a>
-      <a href="https://x.com/MonadioMomurda" target="_blank">TWITTER</a>
-      <a href="https://t.me/monadiocartel" target="_blank">CHAT</a>
-      <a href="https://monadio.club" target="_blank">CHECK PRICE</a>
-    </nav>
-  </div>
+<nav class="nav-links">
+<a href="#" id="openMint">MINT</a>
+<a href="https://x.com/MonadioMomurda" target="_blank">TWITTER</a>
+<a href="https://t.me/monadiocartel" target="_blank">CHAT</a>
+<a href="https://monadio.club" target="_blank">CHECK PRICE</a>
+</nav>
+</div>
 </section>
 
 <div class="mint-overlay" id="mintOverlay">
-  <div class="mint-popup">
-    <div class="close-popup" id="closeMint">×</div>
+<div class="mint-popup">
+<div class="close-popup" id="closeMint">×</div>
 
-    <div class="popup-title">MINT</div>
-    <div class="popup-sub">CONNECT WALLET AND CHOOSE AMOUNT</div>
+<div class="popup-title">MINT</div>
+<div class="popup-sub">CONNECT WALLET AND CHOOSE AMOUNT</div>
 
-    <div class="popup-row">
-      <span class="popup-label">AMOUNT</span>
-      <div class="amount-controls">
-        <button class="amount-btn" id="minusBtn">−</button>
-        <span class="amount-value" id="mintAmount">1</span>
-        <button class="amount-btn" id="plusBtn">+</button>
-      </div>
-    </div>
+<div class="popup-row">
+<span class="popup-label">AMOUNT</span>
+<div class="amount-controls">
+<button class="amount-btn" id="minusBtn">−</button>
+<span class="amount-value" id="mintAmount">1</span>
+<button class="amount-btn" id="plusBtn">+</button>
+</div>
+</div>
 
-    <div class="popup-row">
-      <span class="popup-label">TOTAL</span>
-      <span id="totalPrice">1111.0000 MON</span>
-    </div>
+<div class="popup-row">
+<span class="popup-label">TOTAL</span>
+<span id="totalPrice">1111.0000 MON</span>
+</div>
 
-    <div class="popup-row">
-      <span class="popup-label">WALLET</span>
-      <span id="walletAddr">NOT CONNECTED</span>
-    </div>
+<div class="popup-row">
+<span class="popup-label">WALLET</span>
+<span id="walletAddr">NOT CONNECTED</span>
+</div>
 
-    <button class="button-primary connect-btn" id="connectWallet">CONNECT</button>
-    <button class="button-primary" id="mintNow" disabled>MINT NOW</button>
-    <button class="button-primary wl-btn" id="freeMintBtn" disabled>FREE MINT (WL ONLY)</button>
+<button class="button-primary connect-btn" id="connectWallet">CONNECT</button>
+<button class="button-primary" id="mintNow" disabled>MINT NOW</button>
+<button class="button-primary wl-btn" id="freeMintBtn" disabled>FREE MINT (WL ONLY)</button>
 
-    <div class="contract-line">
-      CONTRACT:
-      <a href="https://monadvision.com/address/0xba26bA63d31D284095F38f0B107DE802e1268Fcf"
-         target="_blank">0xba26...8Fcf</a>
-    </div>
+<div class="contract-line">
+CONTRACT:
+<a href="https://monadvision.com/address/0xba26bA63d31D284095F38f0B107DE802e1268Fcf"
+target="_blank">0xba26...8Fcf</a>
+</div>
 
-    <div class="mint-status" id="mintStatus"></div>
-  </div>
+<div class="mint-status" id="mintStatus"></div>
+</div>
 </div>
 
 <!-- WalletConnect Ethereum Provider -->
@@ -300,8 +301,8 @@
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <script>
-  // ====== CONFIG ======
-  const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
+// ====== CONFIG ======
+const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
 
   // Detect Phantom mobile browser environment
   function isPhantomMobile() {
@@ -312,209 +313,227 @@
     );
   }
 
-  const CONTRACT_ABI = [
-    "function mint(uint256 _mintAmount) payable",
-    "function cost() view returns (uint256)",
-    "function freeMint() external"
-  ];
+const CONTRACT_ABI = [
+"function mint(uint256 _mintAmount) payable",
+"function cost() view returns (uint256)",
+"function freeMint() external"
+];
 
   // global fallback so any stray references don't explode
-  let accounts = [];
+  // Fallback so any stray references don't explode
+let accounts = [];
 
-  const MONAD_CHAIN_ID_HEX = "0x8f"; // 143 mainnet
-  const MONAD_PARAMS = {
-    chainId: MONAD_CHAIN_ID_HEX,
-    chainName: "Monad Mainnet",
-    nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
-    rpcUrls: ["https://rpc.monad.xyz"],
-    blockExplorerUrls: ["https://monadvision.com"]
-  };
+const MONAD_CHAIN_ID_HEX = "0x8f"; // 143 mainnet
+const MONAD_PARAMS = {
+chainId: MONAD_CHAIN_ID_HEX,
+chainName: "Monad Mainnet",
+nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+rpcUrls: ["https://rpc.monad.xyz"],
+blockExplorerUrls: ["https://monadvision.com"]
+};
 
-  const FALLBACK_COST_MON = "1111";
+const FALLBACK_COST_MON = "1111";
 
-  // ====== POPUP ======
-  const openMint  = document.getElementById("openMint");
-  const closeMint = document.getElementById("closeMint");
-  const overlay   = document.getElementById("mintOverlay");
-
-  openMint.addEventListener("click", (e) => {
-    e.preventDefault();
-    overlay.style.display = "flex";
-  });
-  closeMint.addEventListener("click", () => { overlay.style.display = "none"; });
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.style.display = "none";
-  });
-
-  // ====== PROVIDERS ======
-  let injectedProvider      = null;
-  let walletConnectProvider = null;
-  let activeProvider        = null;
-
-  function detectInjectedProvider() {
-    const eth = window.ethereum;
-    if (!eth) return null;
-
-    if (eth.providers && eth.providers.length) {
-      const metaMask = eth.providers.find(p => p.isMetaMask);
-      if (metaMask) return metaMask;
-      const trust = eth.providers.find(p => p.isTrust || p.isTrustWallet);
-      if (trust) return trust;
-      return eth.providers[0];
-    }
-    return eth;
+  // Detect Phantom mobile browser environment
+  function isPhantomMobile() {
+    return (
+      /phantom/i.test(navigator.userAgent) &&
+      window.ethereum &&
+      window.ethereum.isPhantom
+    );
   }
 
-  function getActiveProvider() {
-    return activeProvider;
-  }
+// ====== POPUP ======
+const openMint  = document.getElementById("openMint");
+const closeMint = document.getElementById("closeMint");
+const overlay   = document.getElementById("mintOverlay");
 
-  async function getWalletConnectProvider() {
-    if (walletConnectProvider) return walletConnectProvider;
+openMint.addEventListener("click", (e) => {
+e.preventDefault();
+overlay.style.display = "flex";
+});
+closeMint.addEventListener("click", () => { overlay.style.display = "none"; });
+overlay.addEventListener("click", (e) => {
+if (e.target === overlay) overlay.style.display = "none";
+});
 
-    const wcModule = window["@walletconnect/ethereum-provider"];
-    if (!wcModule || !wcModule.EthereumProvider) {
-      throw new Error("WalletConnect provider script not loaded");
-    }
+// ====== PROVIDERS ======
+let injectedProvider      = null;
+let walletConnectProvider = null;
+let activeProvider        = null;
 
-    walletConnectProvider = await wcModule.EthereumProvider.init({
+function detectInjectedProvider() {
+const eth = window.ethereum;
+if (!eth) return null;
+
+if (eth.providers && eth.providers.length) {
+const metaMask = eth.providers.find(p => p.isMetaMask);
+if (metaMask) return metaMask;
+const trust = eth.providers.find(p => p.isTrust || p.isTrustWallet);
+if (trust) return trust;
+return eth.providers[0];
+}
+return eth;
+}
+
+function getActiveProvider() {
+return activeProvider;
+}
+
+async function getWalletConnectProvider() {
+if (walletConnectProvider) return walletConnectProvider;
+
+const wcModule = window["@walletconnect/ethereum-provider"];
+if (!wcModule || !wcModule.EthereumProvider) {
+throw new Error("WalletConnect provider script not loaded");
+}
+
+walletConnectProvider = await wcModule.EthereumProvider.init({
       projectId: "a76907beadb483551f410ad4716c28f3",
-      chains: [143],
-      optionalChains: [143],
-      rpcMap: { 143: "https://rpc.monad.xyz" },
-      methods: [
-        "eth_sendTransaction",
-        "personal_sign",
-        "eth_signTypedData",
-        "wallet_switchEthereumChain",
-        "wallet_addEthereumChain"
-      ],
-      events: ["chainChanged", "accountsChanged"],
-      metadata: {
-        name: "Monadio Mint",
-        description: "Monadio Momurda Cartel Mint",
-        url: window.location.origin,
-        icons: ["https://monadio.club/main.png"]
-      },
-      showQrModal: true
-    });
+      projectId: "a76907beadb483551f410ad4716c28f3", // your WC projectId
+chains: [143],
+optionalChains: [143],
+rpcMap: { 143: "https://rpc.monad.xyz" },
+methods: [
+"eth_sendTransaction",
+"personal_sign",
+"eth_signTypedData",
+"wallet_switchEthereumChain",
+"wallet_addEthereumChain"
+],
+events: ["chainChanged", "accountsChanged"],
+metadata: {
+name: "Monadio Mint",
+description: "Monadio Momurda Cartel Mint",
+url: window.location.origin,
+icons: ["https://monadio.club/main.png"]
+},
+showQrModal: true
+});
 
-    return walletConnectProvider;
-  }
+return walletConnectProvider;
+}
 
-  // ====== STATE + UI ======
-  let amount = 1;
-  const MAX_AMOUNT = 11;
-  let costWei = ethers.utils.parseEther(FALLBACK_COST_MON);
-  let currentAccount = null;
+// ====== STATE + UI ======
+let amount = 1;
+const MAX_AMOUNT = 11;
+let costWei = ethers.utils.parseEther(FALLBACK_COST_MON);
+let currentAccount = null;
 
-  const plusBtn     = document.getElementById("plusBtn");
-  const minusBtn    = document.getElementById("minusBtn");
-  const amountEl    = document.getElementById("mintAmount");
-  const priceEl     = document.getElementById("totalPrice");
-  const walletEl    = document.getElementById("walletAddr");
-  const statusEl    = document.getElementById("mintStatus");
-  const connectBtn  = document.getElementById("connectWallet");
-  const mintBtn     = document.getElementById("mintNow");
-  const freeMintBtn = document.getElementById("freeMintBtn");
+const plusBtn     = document.getElementById("plusBtn");
+const minusBtn    = document.getElementById("minusBtn");
+const amountEl    = document.getElementById("mintAmount");
+const priceEl     = document.getElementById("totalPrice");
+const walletEl    = document.getElementById("walletAddr");
+const statusEl    = document.getElementById("mintStatus");
+const connectBtn  = document.getElementById("connectWallet");
+const mintBtn     = document.getElementById("mintNow");
+const freeMintBtn = document.getElementById("freeMintBtn");
 
-  function setStatus(msg, type = "") {
-    statusEl.textContent = msg;
-    statusEl.className = "mint-status" + (type ? " " + type : "");
-  }
+function setStatus(msg, type = "") {
+statusEl.textContent = msg;
+statusEl.className = "mint-status" + (type ? " " + type : "");
+}
 
-  function updatePrice() {
-    const totalWei = costWei.mul(amount);
-    const formatted = ethers.utils.formatEther(totalWei);
-    priceEl.textContent = parseFloat(formatted).toFixed(4) + " MON";
-  }
+function updatePrice() {
+const totalWei = costWei.mul(amount);
+const formatted = ethers.utils.formatEther(totalWei);
+priceEl.textContent = parseFloat(formatted).toFixed(4) + " MON";
+}
 
-  function setAmount(newAmount) {
-    if (newAmount < 1) newAmount = 1;
-    if (newAmount > MAX_AMOUNT) newAmount = MAX_AMOUNT;
-    amount = newAmount;
-    amountEl.textContent = amount;
-    updatePrice();
-  }
+function setAmount(newAmount) {
+if (newAmount < 1) newAmount = 1;
+if (newAmount > MAX_AMOUNT) newAmount = MAX_AMOUNT;
+amount = newAmount;
+amountEl.textContent = amount;
+updatePrice();
+}
 
-  plusBtn.addEventListener("click", () => setAmount(amount + 1));
-  minusBtn.addEventListener("click", () => setAmount(amount - 1));
-  updatePrice();
+plusBtn.addEventListener("click", () => setAmount(amount + 1));
+minusBtn.addEventListener("click", () => setAmount(amount - 1));
+updatePrice();
 
   function handleAccountsChanged(accts) {
     if (!accts || !accts.length) {
-      currentAccount = null;
-      walletEl.textContent = "NOT CONNECTED";
-      mintBtn.disabled = true;
-      freeMintBtn.disabled = true;
-      connectBtn.textContent = "CONNECT";
-    } else {
+  function handleAccountsChanged(accs) {
+    if (!accs || !accs.length) {
+currentAccount = null;
+walletEl.textContent = "NOT CONNECTED";
+mintBtn.disabled = true;
+freeMintBtn.disabled = true;
+connectBtn.textContent = "CONNECT";
+} else {
       currentAccount = accts[0];
-      walletEl.textContent = currentAccount;
-      mintBtn.disabled = false;
-      freeMintBtn.disabled = false;
-      connectBtn.textContent = "CONNECTED";
-    }
-  }
+      currentAccount = accs[0];
+walletEl.textContent = currentAccount;
+mintBtn.disabled = false;
+freeMintBtn.disabled = false;
+connectBtn.textContent = "CONNECTED";
+}
+}
 
-  function setupProviderListeners(provider) {
-    if (!provider || !provider.on) return;
+function setupProviderListeners(provider) {
+if (!provider || !provider.on) return;
 
     provider.on("accountsChanged", (accts) => {
       handleAccountsChanged(accts);
-    });
+    provider.on("accountsChanged", (accs) => {
+      handleAccountsChanged(accs);
+});
 
-    provider.on("chainChanged", (chainId) => {
-      const hex = String(chainId).toLowerCase();
-      if (hex !== MONAD_CHAIN_ID_HEX.toLowerCase()) {
-        setStatus("WRONG NETWORK – SELECT MONAD (143)", "error");
-      } else {
-        setStatus("", "");
-      }
-    });
-  }
+provider.on("chainChanged", (chainId) => {
+const hex = String(chainId).toLowerCase();
+if (hex !== MONAD_CHAIN_ID_HEX.toLowerCase()) {
+setStatus("WRONG NETWORK – SELECT MONAD (143)", "error");
+} else {
+setStatus("", "");
+}
+});
+}
 
-  function parseFriendlyError(err) {
-    const nested =
-      err?.data?.message ||
-      err?.error?.message ||
-      err?.message ||
-      "";
+function parseFriendlyError(err) {
+const nested =
+err?.data?.message ||
+err?.error?.message ||
+err?.message ||
+"";
 
     let friendly = nested;
+    let friendly = nested || "";
 
-    if (nested.includes("Not eligible"))                     friendly = "NOT WHITELISTED / NO FREE MINT";
-    if (nested.includes("not for sale yet"))                 friendly = "MINT NOT LIVE YET";
-    if (nested.includes("Not enough tokens left to mint"))   friendly = "NOT ENOUGH SUPPLY LEFT";
-    if (nested.includes("Not enough tokens available"))      friendly = "SOLD OUT";
-    if (nested.includes("max NFT per address exceeded"))     friendly = "PER-WALLET LIMIT HIT";
-    if (nested.includes("Value below price"))                friendly = "NOT ENOUGH MON SENT";
-    if (nested.includes("mint more than the 11"))            friendly = "MAX 11 PER TX";
+if (nested.includes("Not eligible"))                     friendly = "NOT WHITELISTED / NO FREE MINT";
+if (nested.includes("not for sale yet"))                 friendly = "MINT NOT LIVE YET";
+if (nested.includes("Not enough tokens left to mint"))   friendly = "NOT ENOUGH SUPPLY LEFT";
+if (nested.includes("Not enough tokens available"))      friendly = "SOLD OUT";
+if (nested.includes("max NFT per address exceeded"))     friendly = "PER-WALLET LIMIT HIT";
+if (nested.includes("Value below price"))                friendly = "NOT ENOUGH MON SENT";
+if (nested.includes("mint more than the 11"))            friendly = "MAX 11 PER TX";
 
-    if (!friendly) friendly = "MINT FAILED";
-    return friendly;
-  }
+if (!friendly) friendly = "MINT FAILED";
+return friendly;
+}
 
-  async function getCurrentChainIdHex(provider) {
-    const raw = await provider.request({ method: "eth_chainId" });
+async function getCurrentChainIdHex(provider) {
+const raw = await provider.request({ method: "eth_chainId" });
 
-    if (typeof raw === "string") {
-      if (raw.startsWith("0x") || raw.startsWith("0X")) return raw.toLowerCase();
-      const num = Number(raw);
-      if (!Number.isNaN(num)) return "0x" + num.toString(16);
-      return raw.toLowerCase();
-    }
+if (typeof raw === "string") {
+if (raw.startsWith("0x") || raw.startsWith("0X")) return raw.toLowerCase();
+const num = Number(raw);
+if (!Number.isNaN(num)) return "0x" + num.toString(16);
+return raw.toLowerCase();
+}
 
-    if (typeof raw === "number") {
-      return "0x" + raw.toString(16);
-    }
+if (typeof raw === "number") {
+return "0x" + raw.toString(16);
+}
 
-    return String(raw).toLowerCase();
-  }
+return String(raw).toLowerCase();
+}
 
-  async function ensureMonadNetwork(provider) {
-    const p = provider || getActiveProvider();
-    if (!p) throw new Error("NO WALLET DETECTED");
+  // Always try to get onto Monad (143)
+async function ensureMonadNetwork(provider) {
+const p = provider || getActiveProvider();
+if (!p) throw new Error("NO WALLET DETECTED");
 
     // 🔥 Phantom mobile CANNOT switch/add chains
     if (isPhantomMobile()) {
@@ -523,189 +542,210 @@
     }
 
     // Normal flow for all other wallets
-    let currentHex;
+let currentHex;
 
-    try {
-      currentHex = await getCurrentChainIdHex(p);
-    } catch (e) {
+try {
+currentHex = await getCurrentChainIdHex(p);
+} catch (e) {
       console.error(e);
-      return;
-    }
+      console.error("Failed to read chainId", e);
+      // If we can't read chainId we just bail and let the wallet handle it
+return;
+}
 
-    if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) {
-      return;
-    }
+    // Already on Monad
+if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) {
+return;
+}
 
-    try {
-      await p.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: MONAD_CHAIN_ID_HEX }]
-      });
-    } catch (switchError) {
+try {
+      // Ask wallet to switch to Monad (chain 143)
+await p.request({
+method: "wallet_switchEthereumChain",
+params: [{ chainId: MONAD_CHAIN_ID_HEX }]
+});
+} catch (switchError) {
       if (switchError.code === 4902) {
-        try {
-          await p.request({
-            method: "wallet_addEthereumChain",
-            params: [MONAD_PARAMS]
-          });
-        } catch (addError) {
+      // Chain not added yet → try to add it
+      if (
+        switchError.code === 4902 ||
+        (typeof switchError.message === "string" &&
+         switchError.message.includes("Unrecognized chain ID"))
+      ) {
+try {
+await p.request({
+method: "wallet_addEthereumChain",
+params: [MONAD_PARAMS]
+});
+} catch (addError) {
           console.error(addError);
           throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
-        }
-      } else {
+          console.error("wallet_addEthereumChain failed", addError);
+          throw new Error("Please add Monad (chain 143) in your wallet, then try again.");
+}
+} else {
         console.error(switchError);
         throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
-      }
-    }
-  }
+        console.error("wallet_switchEthereumChain failed", switchError);
+        throw new Error("Please switch to Monad (chain 143) in your wallet, then try again.");
+}
+}
+}
 
-  // ====== CONNECT BUTTON ======
-  async function connectWallet() {
-    try {
-      // 1) Try injected (MetaMask / Trust / Phantom, etc.)
-      injectedProvider = detectInjectedProvider();
+// ====== CONNECT BUTTON ======
+async function connectWallet() {
+try {
+// 1) Try injected (MetaMask / Trust / Phantom, etc.)
+injectedProvider = detectInjectedProvider();
 
-      if (injectedProvider) {
-        const provider = injectedProvider;
-        activeProvider = provider;
+if (injectedProvider) {
+const provider = injectedProvider;
+activeProvider = provider;
 
         // 🔔 Phantom mobile notice
-        if (isPhantomMobile()) {
-          alert(
-            "PHANTOM MOBILE DETECTED\n\n" +
+if (isPhantomMobile()) {
+alert(
+"PHANTOM MOBILE DETECTED\n\n" +
             "Phantom on mobile does not support automatic network switching.\n" +
             "Before you mint, please make sure you have manually added / selected:\n\n" +
             "• Network: Monad\n" +
             "• Chain ID: 143\n" +
             "• RPC: https://rpc.monad.xyz\n\n" +
             "After switching to Monad in Phantom, tap CONNECT again."
-          );
-        }
+            "If Phantom shows a network switch popup, accept it.\n" +
+            "If it stays on Ethereum, open wallet settings and make sure Monad " +
+            "(chain 143) is supported, then try again."
+);
+}
 
         const accts = await provider.request({
-          method: "eth_requestAccounts"
-        });
+        const accs = await provider.request({
+method: "eth_requestAccounts"
+});
         handleAccountsChanged(accts);
-        setupProviderListeners(provider);
+        handleAccountsChanged(accs);
+setupProviderListeners(provider);
 
-        await ensureMonadNetwork(provider);
+await ensureMonadNetwork(provider);
 
-        setStatus("CONNECTED", "success");
-      } else {
-        // 2) Fallback → WalletConnect (mobile normal browser etc.)
-        setStatus("OPENING WALLETCONNECT…", "info");
+setStatus("CONNECTED", "success");
+} else {
+// 2) Fallback → WalletConnect (mobile normal browser etc.)
+setStatus("OPENING WALLETCONNECT…", "info");
 
-        const wc = await getWalletConnectProvider();
-        const wcAccounts = await wc.enable(); // opens QR / app selector
+const wc = await getWalletConnectProvider();
+const wcAccounts = await wc.enable(); // opens QR / app selector
 
-        if (!wcAccounts || !wcAccounts.length) {
-          throw new Error("NO ACCOUNT SELECTED IN WALLET");
-        }
+if (!wcAccounts || !wcAccounts.length) {
+throw new Error("NO ACCOUNT SELECTED IN WALLET");
+}
 
-        activeProvider = wc;
-        handleAccountsChanged(wcAccounts);
-        setupProviderListeners(wc);
-        connectBtn.textContent = "CONNECTED (WC)";
-        setStatus("CONNECTED VIA WALLETCONNECT", "success");
-      }
+activeProvider = wc;
+handleAccountsChanged(wcAccounts);
+setupProviderListeners(wc);
+connectBtn.textContent = "CONNECTED (WC)";
+setStatus("CONNECTED VIA WALLETCONNECT", "success");
+}
 
       // Try to read on-chain cost
-      try {
-        const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
-        const contract     = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
-        const onChainCost  = await contract.cost();
-        if (onChainCost.gt(0)) {
-          costWei = onChainCost;
-          updatePrice();
-        }
-      } catch (e) {
+      // Try to read on-chain cost using whichever provider is active
+try {
+const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
+const contract     = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
+const onChainCost  = await contract.cost();
+if (onChainCost.gt(0)) {
+costWei = onChainCost;
+updatePrice();
+}
+} catch (e) {
         // ignore, fallback cost stays
-      }
-    } catch (err) {
-      console.error(err);
-      setStatus(err.message || "FAILED TO CONNECT", "error");
-    }
-  }
+        // ignore, keep fallback cost
+}
+} catch (err) {
+console.error(err);
+setStatus(err.message || "FAILED TO CONNECT", "error");
+}
+}
 
-  connectBtn.addEventListener("click", connectWallet);
+connectBtn.addEventListener("click", connectWallet);
 
-  // ====== PAID MINT ======
-  async function mint() {
-    const provider = getActiveProvider();
-    if (!provider) { setStatus("NO WALLET DETECTED", "error"); return; }
-    if (!currentAccount) { setStatus("CONNECT FIRST", "error"); return; }
+// ====== PAID MINT ======
+async function mint() {
+const provider = getActiveProvider();
+if (!provider) { setStatus("NO WALLET DETECTED", "error"); return; }
+if (!currentAccount) { setStatus("CONNECT FIRST", "error"); return; }
 
-    try {
-      await ensureMonadNetwork(provider);
+try {
+await ensureMonadNetwork(provider);
 
-      const web3Provider = new ethers.providers.Web3Provider(provider, "any");
-      const signer   = web3Provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+const web3Provider = new ethers.providers.Web3Provider(provider, "any");
+const signer   = web3Provider.getSigner();
+const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      const value = costWei.mul(amount);
+const value = costWei.mul(amount);
 
-      setStatus("SENDING TRANSACTION…");
-      mintBtn.disabled = true;
-      freeMintBtn.disabled = true;
+setStatus("SENDING TRANSACTION…");
+mintBtn.disabled = true;
+freeMintBtn.disabled = true;
 
-      const tx = await contract.mint(amount, { value });
-      setStatus("WAITING FOR CONFIRMATION…");
-      await tx.wait();
+const tx = await contract.mint(amount, { value });
+setStatus("WAITING FOR CONFIRMATION…");
+await tx.wait();
 
-      setStatus("MINT SUCCESSFUL", "success");
-      mintBtn.disabled = false;
-      freeMintBtn.disabled = false;
-    } catch (err) {
-      console.error(err);
-      mintBtn.disabled = false;
-      freeMintBtn.disabled = false;
-      if (err.code === 4001) {
-        setStatus("TX REJECTED BY USER", "error");
-      } else {
-        setStatus(parseFriendlyError(err), "error");
-      }
-    }
-  }
+setStatus("MINT SUCCESSFUL", "success");
+mintBtn.disabled = false;
+freeMintBtn.disabled = false;
+} catch (err) {
+console.error(err);
+mintBtn.disabled = false;
+freeMintBtn.disabled = false;
+if (err.code === 4001) {
+setStatus("TX REJECTED BY USER", "error");
+} else {
+setStatus(parseFriendlyError(err), "error");
+}
+}
+}
 
-  mintBtn.addEventListener("click", mint);
+mintBtn.addEventListener("click", mint);
 
-  // ====== FREE MINT ======
-  async function freeMint() {
-    const provider = getActiveProvider();
-    if (!provider) { setStatus("NO WALLET DETECTED", "error"); return; }
-    if (!currentAccount) { setStatus("CONNECT FIRST", "error"); return; }
+// ====== FREE MINT ======
+async function freeMint() {
+const provider = getActiveProvider();
+if (!provider) { setStatus("NO WALLET DETECTED", "error"); return; }
+if (!currentAccount) { setStatus("CONNECT FIRST", "error"); return; }
 
-    try {
-      await ensureMonadNetwork(provider);
+try {
+await ensureMonadNetwork(provider);
 
-      const web3Provider = new ethers.providers.Web3Provider(provider, "any");
-      const signer   = web3Provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+const web3Provider = new ethers.providers.Web3Provider(provider, "any");
+const signer   = web3Provider.getSigner();
+const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      setStatus("SENDING FREE MINT TX…");
-      mintBtn.disabled = true;
-      freeMintBtn.disabled = true;
+setStatus("SENDING FREE MINT TX…");
+mintBtn.disabled = true;
+freeMintBtn.disabled = true;
 
-      const tx = await contract.freeMint();
-      setStatus("WAITING FOR CONFIRMATION…");
-      await tx.wait();
+const tx = await contract.freeMint();
+setStatus("WAITING FOR CONFIRMATION…");
+await tx.wait();
 
-      setStatus("FREE MINT SUCCESSFUL", "success");
-      mintBtn.disabled = false;
-      freeMintBtn.disabled = false;
-    } catch (err) {
-      console.error(err);
-      mintBtn.disabled = false;
-      freeMintBtn.disabled = false;
-      if (err.code === 4001) {
-        setStatus("TX REJECTED BY USER", "error");
-      } else {
-        setStatus(parseFriendlyError(err), "error");
-      }
-    }
-  }
+setStatus("FREE MINT SUCCESSFUL", "success");
+mintBtn.disabled = false;
+freeMintBtn.disabled = false;
+} catch (err) {
+console.error(err);
+mintBtn.disabled = false;
+freeMintBtn.disabled = false;
+if (err.code === 4001) {
+setStatus("TX REJECTED BY USER", "error");
+} else {
+setStatus(parseFriendlyError(err), "error");
+}
+}
+}
 
-  freeMintBtn.addEventListener("click", freeMint);
+freeMintBtn.addEventListener("click", freeMint);
 </script>
 </body>
 </html>
