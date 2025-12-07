@@ -100,7 +100,7 @@
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 10; /* BELOW WalletConnect modal */
+      z-index: 10; /* WalletConnect modal uses a higher z-index */
     }
 
     .mint-popup {
@@ -303,22 +303,13 @@
   // ====== CONFIG ======
   const CONTRACT_ADDRESS = "0xba26bA63d31D284095F38f0B107DE802e1268Fcf";
 
-  // Detect Phantom mobile browser environment
-  function isPhantomMobile() {
-    return (
-      /phantom/i.test(navigator.userAgent) &&
-      window.ethereum &&
-      window.ethereum.isPhantom
-    );
-  }
-
   const CONTRACT_ABI = [
     "function mint(uint256 _mintAmount) payable",
     "function cost() view returns (uint256)",
     "function freeMint() external"
   ];
 
-  // global fallback so any stray references don't explode
+  // Fallback so any stray references don't explode
   let accounts = [];
 
   const MONAD_CHAIN_ID_HEX = "0x8f"; // 143 mainnet
@@ -331,6 +322,15 @@
   };
 
   const FALLBACK_COST_MON = "1111";
+
+  // Detect Phantom mobile browser environment
+  function isPhantomMobile() {
+    return (
+      /phantom/i.test(navigator.userAgent) &&
+      window.ethereum &&
+      window.ethereum.isPhantom
+    );
+  }
 
   // ====== POPUP ======
   const openMint  = document.getElementById("openMint");
@@ -378,7 +378,7 @@
     }
 
     walletConnectProvider = await wcModule.EthereumProvider.init({
-      projectId: "a76907beadb483551f410ad4716c28f3",
+      projectId: "a76907beadb483551f410ad4716c28f3", // your WC projectId
       chains: [143],
       optionalChains: [143],
       rpcMap: { 143: "https://rpc.monad.xyz" },
@@ -441,15 +441,15 @@
   minusBtn.addEventListener("click", () => setAmount(amount - 1));
   updatePrice();
 
-  function handleAccountsChanged(accts) {
-    if (!accts || !accts.length) {
+  function handleAccountsChanged(accs) {
+    if (!accs || !accs.length) {
       currentAccount = null;
       walletEl.textContent = "NOT CONNECTED";
       mintBtn.disabled = true;
       freeMintBtn.disabled = true;
       connectBtn.textContent = "CONNECT";
     } else {
-      currentAccount = accts[0];
+      currentAccount = accs[0];
       walletEl.textContent = currentAccount;
       mintBtn.disabled = false;
       freeMintBtn.disabled = false;
@@ -460,8 +460,8 @@
   function setupProviderListeners(provider) {
     if (!provider || !provider.on) return;
 
-    provider.on("accountsChanged", (accts) => {
-      handleAccountsChanged(accts);
+    provider.on("accountsChanged", (accs) => {
+      handleAccountsChanged(accs);
     });
 
     provider.on("chainChanged", (chainId) => {
@@ -481,7 +481,7 @@
       err?.message ||
       "";
 
-    let friendly = nested;
+    let friendly = nested || "";
 
     if (nested.includes("Not eligible"))                     friendly = "NOT WHITELISTED / NO FREE MINT";
     if (nested.includes("not for sale yet"))                 friendly = "MINT NOT LIVE YET";
@@ -512,49 +512,50 @@
     return String(raw).toLowerCase();
   }
 
+  // Always try to get onto Monad (143)
   async function ensureMonadNetwork(provider) {
     const p = provider || getActiveProvider();
     if (!p) throw new Error("NO WALLET DETECTED");
 
-    // 🔥 Phantom mobile CANNOT switch/add chains
-    if (isPhantomMobile()) {
-      console.warn("Phantom mobile detected – skipping chain switching.");
-      return; // user must already be on Monad
-    }
-
-    // Normal flow for all other wallets
     let currentHex;
-
     try {
       currentHex = await getCurrentChainIdHex(p);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to read chainId", e);
+      // If we can't read chainId we just bail and let the wallet handle it
       return;
     }
 
+    // Already on Monad
     if (currentHex === MONAD_CHAIN_ID_HEX.toLowerCase()) {
       return;
     }
 
     try {
+      // Ask wallet to switch to Monad (chain 143)
       await p.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: MONAD_CHAIN_ID_HEX }]
       });
     } catch (switchError) {
-      if (switchError.code === 4902) {
+      // Chain not added yet → try to add it
+      if (
+        switchError.code === 4902 ||
+        (typeof switchError.message === "string" &&
+         switchError.message.includes("Unrecognized chain ID"))
+      ) {
         try {
           await p.request({
             method: "wallet_addEthereumChain",
             params: [MONAD_PARAMS]
           });
         } catch (addError) {
-          console.error(addError);
-          throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
+          console.error("wallet_addEthereumChain failed", addError);
+          throw new Error("Please add Monad (chain 143) in your wallet, then try again.");
         }
       } else {
-        console.error(switchError);
-        throw new Error("PLEASE SWITCH TO MONAD (CHAIN 143) IN WALLET");
+        console.error("wallet_switchEthereumChain failed", switchError);
+        throw new Error("Please switch to Monad (chain 143) in your wallet, then try again.");
       }
     }
   }
@@ -569,23 +570,19 @@
         const provider = injectedProvider;
         activeProvider = provider;
 
-        // 🔔 Phantom mobile notice
         if (isPhantomMobile()) {
           alert(
             "PHANTOM MOBILE DETECTED\n\n" +
-            "Phantom on mobile does not support automatic network switching.\n" +
-            "Before you mint, please make sure you have manually added / selected:\n\n" +
-            "• Network: Monad\n" +
-            "• Chain ID: 143\n" +
-            "• RPC: https://rpc.monad.xyz\n\n" +
-            "After switching to Monad in Phantom, tap CONNECT again."
+            "If Phantom shows a network switch popup, accept it.\n" +
+            "If it stays on Ethereum, open wallet settings and make sure Monad " +
+            "(chain 143) is supported, then try again."
           );
         }
 
-        const accts = await provider.request({
+        const accs = await provider.request({
           method: "eth_requestAccounts"
         });
-        handleAccountsChanged(accts);
+        handleAccountsChanged(accs);
         setupProviderListeners(provider);
 
         await ensureMonadNetwork(provider);
@@ -609,7 +606,7 @@
         setStatus("CONNECTED VIA WALLETCONNECT", "success");
       }
 
-      // Try to read on-chain cost
+      // Try to read on-chain cost using whichever provider is active
       try {
         const web3Provider = new ethers.providers.Web3Provider(getActiveProvider(), "any");
         const contract     = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, web3Provider);
@@ -619,7 +616,7 @@
           updatePrice();
         }
       } catch (e) {
-        // ignore, fallback cost stays
+        // ignore, keep fallback cost
       }
     } catch (err) {
       console.error(err);
