@@ -78,158 +78,17 @@
         0 0 60px #7a0aff;
     }
 
-    /* ---------- NFT PREVIEW WINDOW ---------- */
-
-    .nft-preview-window {
-      position: absolute;
-      top: 7%;
-      right: -25%;
-      z-index: 4;
-      width: min(26vw, 360px);
-      max-width: 360px;
-      pointer-events: auto;
+    @media (max-width: 900px) {
+      .hero { height: auto; width: 100vw; display: block; }
+      .hero-img { width: 100vw; height: auto; }
+      .nav-links { left: 8%; bottom: 8%; gap: 0.9rem; }
+      .nav-links a { font-size: 2.4rem; }
     }
 
-    .nft-preview-inner {
-      position: relative;
-      background: #111;
-      border: 3px solid #e4d4ff;
-      padding: 6px;
-      box-shadow:
-        0 0 18px rgba(186,132,255,0.9),
-        0 0 42px rgba(152,90,255,0.9);
+    @media (max-width: 600px) {
+      .nav-links { left: 7%; bottom: 6%; gap: 0.7rem; }
+      .nav-links a { font-size: 2rem; }
     }
-
-    .nft-preview-window::before,
-    .nft-preview-window::after {
-      content: "";
-      position: absolute;
-      inset: -6px -6px auto auto;
-      border: 3px solid #e4d4ff;
-      opacity: 0.9;
-    }
-
-    .nft-preview-window::before {
-      transform: translate(6px, -6px);
-    }
-
-    .nft-preview-window::after {
-      transform: translate(12px, -12px);
-    }
-
-    .nft-preview-titlebar {
-      height: 28px;
-      background: #a66bff;
-      border-bottom: 2px solid #e4d4ff;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-inline: 10px;
-      font-size: 0.8rem;
-      letter-spacing: .08em;
-    }
-
-    .nft-preview-titlebar::after {
-      content: "–";
-    }
-
-    #nftPreview {
-      width: 100%;
-      display: block;
-      background: #111;
-      image-rendering: pixelated;
-      border-top: 0;
-      border: 2px solid #e4d4ff;
-      border-top: none;
-      transition:
-        opacity .35s ease-out,
-        filter .35s ease-out;
-    }
-
-    .nft-preview-inner.dissolve #nftPreview {
-      opacity: 0;
-      filter: blur(4px);
-    }
-
-    .nft-preview-hint {
-      margin-top: 6px;
-      font-size: 0.7rem;
-      letter-spacing: .12em;
-      text-align: center;
-      opacity: 0.7;
-    }
-
-    .nft-preview-hint::before {
-      content: "> ";
-    }
-
-    /* ===== MOBILE LAYOUT FIXES ===== */
- /* ---------- NFT PREVIEW WINDOW ---------- */
-
-.nft-preview-shell {
-  position: absolute;
-  top: 8%;
-  right: 10%;           /* desktop: near top-right */
-  width: 18vw;
-  max-width: 320px;
-  aspect-ratio: 1 / 1;
-  border: 3px solid #caa0ff;
-  box-shadow:
-    0 0 12px rgba(202,160,255,0.9),
-    0 0 30px rgba(122,10,255,0.8);
-  padding: 6px;
-  background: rgba(5,5,10,0.95);
-  z-index: 4;           /* below mint-status box which is z-index: 6 */
-}
-
-.nft-preview-frame {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border: 2px solid #caa0ff;
-  background: #050509;
-  overflow: hidden;
-}
-
-.nft-preview-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 0.3s ease-out;
-}
-
-.nft-preview-caption {
-  position: absolute;
-  bottom: 6px;
-  left: 8px;
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  color: rgba(202,160,255,0.9);
-  text-shadow:
-    0 0 8px #b154ff,
-    0 0 16px #7a0aff;
-}
-
-/* Desktop nudge further left */
-@media (min-width: 901px) {
-  .nft-preview-shell {
-    right: 6%;   /* move left by reducing "right" */
-  }
-}
-
-/* Mobile layout – keep links in place, don't block mint bar */
-@media (max-width: 900px) {
-  .nft-preview-shell {
-    width: 75vw;
-    max-width: 380px;
-    top: auto;
-    bottom: 24%;        /* sits above the fixed mint-stats box */
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-  }
-}
-
 
     /* ---------- MINT POPUP ---------- */
 
@@ -427,8 +286,6 @@
 
 <body>
 
-<body>
-
 <section class="hero-wrapper">
   <div class="hero">
     <img src="main.png" class="hero-img" alt="Monadio Momurda Cartel">
@@ -439,21 +296,6 @@
       <a href="https://t.me/monadiocartel" target="_blank">CHAT</a>
       <a href="https://monadio.club" target="_blank">CHECK PRICE</a>
     </nav>
-
-    <!-- NFT PREVIEW WINDOW -->
-    <div class="nft-preview-window" id="nftPreviewWindow">
-      <div class="nft-preview-inner" id="nftPreviewInner">
-        <div class="nft-preview-titlebar"></div>
-        <img
-          id="nftPreview"
-          src="nft_prereveal.png"
-          alt="Monadio NFT preview"
-        />
-      </div>
-      <div class="nft-preview-hint">
-        hover / tap to reveal
-      </div>
-    </div>
   </div>
 </section>
 
@@ -959,100 +801,6 @@
   }
 
   freeMintBtn.addEventListener("click", freeMint);
-
-  // ====== NFT PREVIEW SLIDESHOW ======
-  const prerevealSrc = "nft_prereveal.png"; // default image
-  const nftImages = [
-      "nfts/10.png",
-        "nfts/1013.png",
-        "nfts/1017.png",
-        "nfts/1019.png",
-        "nfts/1085.png",
-        "nfts/1101.png",
-        "nfts/1107.png",
-        "nfts/137.png",
-        "nfts/184.png",
-        "nfts/186.png",
-        "nfts/191.png",
-        "nfts/2.png",
-        "nfts/240.png",
-        "nfts/352.png",
-        "nfts/423.png",
-        "nfts/439.png",
-        "nfts/469.png",
-        "nfts/474.png",
-        "nfts/516.png",
-        "nfts/567.png",
-        "nfts/570.png",
-        "nfts/630.png",
-        "nfts/70.png",
-        "nfts/711.png",
-        "nfts/712.png",
-        "nfts/784.png",
-        "nfts/787.png",
-        "nfts/839.png",
-        "nfts/857.png",
-        "nfts/858.png",
-        "nfts/930.png",
-        "nfts/934.png",
-        "nfts/961.png",
-        "nfts/985.png"  ];
-
-  const previewWindow = document.getElementById("nftPreviewWindow");
-  const previewInner  = document.getElementById("nftPreviewInner");
-  const previewImg    = document.getElementById("nftPreview");
-
-  let currentPreviewSrc = prerevealSrc;
-
-  function pickRandomNft() {
-    if (!nftImages.length) return prerevealSrc;
-    let next = nftImages[Math.floor(Math.random() * nftImages.length)];
-    if (next === currentPreviewSrc && nftImages.length > 1) {
-      let tries = 0;
-      while (next === currentPreviewSrc && tries < 6) {
-        next = nftImages[Math.floor(Math.random() * nftImages.length)];
-        tries++;
-      }
-    }
-    return next;
-  }
-
-  function showRandomPreview() {
-    const newSrc = pickRandomNft();
-    if (newSrc === currentPreviewSrc) return;
-
-    previewInner.classList.add("dissolve");
-
-    setTimeout(() => {
-      previewImg.src = newSrc;
-      currentPreviewSrc = newSrc;
-      previewInner.classList.remove("dissolve");
-    }, 180);
-  }
-
-  function resetToPrereveal() {
-    if (currentPreviewSrc === prerevealSrc) return;
-    previewInner.classList.add("dissolve");
-    setTimeout(() => {
-      previewImg.src = prerevealSrc;
-      currentPreviewSrc = prerevealSrc;
-      previewInner.classList.remove("dissolve");
-    }, 180);
-  }
-
-  // Desktop hover
-  previewWindow.addEventListener("mouseenter", showRandomPreview);
-  previewWindow.addEventListener("mouseleave", resetToPrereveal);
-
-  // Mobile tap toggle
-  previewWindow.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (currentPreviewSrc === prerevealSrc) {
-      showRandomPreview();
-    } else {
-      resetToPrereveal();
-    }
-  });
 </script>
 </body>
 </html>
